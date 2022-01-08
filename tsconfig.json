@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "typeRoots": [
+      "./types"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["./src/*"],
+      "styles/*": ["./styles/*"],
+      "assets/*": ["./assets/*"]
+    }
+  }
+}
