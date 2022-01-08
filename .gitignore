@@ -1,0 +1,9 @@
+# IDE & OS
+.idea
+.DS_Store
+
+# Build and dependencies
+node_modules
+public/[^index.html]*
+dist
+
