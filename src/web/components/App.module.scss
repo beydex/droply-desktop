@@ -1,9 +1,10 @@
-@import "~web/assets/fonts/poppins/Style";
+@import "~web/assets/fonts/poppins/style.scss";
 
 body {
   margin: 0;
 }
 
 .App {
-  font-family: "Poppins", sans-serif;
+  //noinspection CssNoGenericFontName
+  font-family: "Poppins";
 }
