@@ -1,11 +1,11 @@
 import React from "react"
 import Styles from "./App.module.scss"
-import {Root as AuthRoot} from "src/pages/auth/Root/Root";
+import {Auth} from "web/pages/auth/Auth";
 
 export default function App() {
   return (
     <div className={Styles.App}>
-      <AuthRoot/>
+      <Auth/>
     </div>
   )
 }

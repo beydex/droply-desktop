@@ -1,6 +1,6 @@
 import React from "react"
 import Styles from "./Window.module.scss"
-import {Logo} from "src/pages/auth/Logo/Logo";
+import {Logo} from "web/pages/auth/Logo";
 
 export function Window() {
   return (

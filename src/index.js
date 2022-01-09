@@ -1,7 +1,7 @@
-const electron = require("electron")
+const {app, BrowserWindow} = require("electron")
 
-electron.app.on("ready", async () => {
-  let window = new electron.BrowserWindow({
+app.on("ready", async () => {
+  let window = new BrowserWindow({
     width: 800,
     height: 600,
   })
