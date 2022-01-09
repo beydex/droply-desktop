@@ -1,0 +1,15 @@
+.Window {
+  width: 480px;
+  height: 620px;
+  border: 1px #E5E5E5 solid;
+  border-radius: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.Logo {
+  height: 150px;
+  width: 150px;
+  margin-top: 30px;
+}

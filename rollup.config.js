@@ -1,4 +1,5 @@
 import progress from "rollup-plugin-progress"
+import html from "@rollup/plugin-html"
 import replace from "@rollup/plugin-replace"
 import url from '@rollup/plugin-url'
 import resolve from "@rollup/plugin-node-resolve"
@@ -8,7 +9,9 @@ import typescript from "@rollup/plugin-typescript"
 import serve from "rollup-plugin-serve";
 import livereload from "rollup-plugin-livereload";
 import postcss from "rollup-plugin-postcss";
+import postcssUrl from "postcss-url"
 import {terser} from "rollup-plugin-terser";
+
 import path from "path";
 
 const CURRENT_DIR = path.resolve(__dirname)
@@ -56,10 +59,17 @@ function getPlugins([isProduction, buildMode]) {
     typescript(),
     postcss({
       extract: true,
-      modules: true,
       autoModules: true,
       sourceMap: !isProduction,
       minimize: isProduction,
+      to: "public/bundle.css",
+      plugins: [
+        postcssUrl({
+          url: "copy",
+          basePath: CURRENT_DIR,
+          useHash: true,
+        })
+      ]
     }),
     isProduction && terser(),
     !isProduction && serve({
@@ -74,12 +84,17 @@ function getPlugins([isProduction, buildMode]) {
   ]
 }
 
-export default {
+/**
+ * @type {import('rollup').RollupOptions}
+ */
+let config = {
   input: 'src/index.tsx',
   output: {
+    file: "public/bundle.js",
     sourcemap: true,
-    file: 'public/bundle.js',
     format: 'iife'
   },
   plugins: getPlugins(getBuildMode())
 };
+
+export default config;

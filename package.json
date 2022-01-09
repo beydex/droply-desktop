@@ -15,6 +15,7 @@
   "devDependencies": {
     "@rollup/plugin-alias": "^3.1.4",
     "@rollup/plugin-commonjs": "^19.0.1",
+    "@rollup/plugin-html": "^0.2.4",
     "@rollup/plugin-node-resolve": "^13.0.2",
     "@rollup/plugin-replace": "^3.0.0",
     "@rollup/plugin-typescript": "^8.2.3",
@@ -23,7 +24,10 @@
     "@types/react-dom": "^17.0.9",
     "electron": "^16.0.6",
     "electron-builder": "^22.14.5",
+    "esbuild": "^0.14.11",
+    "esbuild-plugin-postcss2": "^0.1.1",
     "postcss": "^8.3.5",
+    "postcss-url": "^10.1.3",
     "rollup": "^2.53.2",
     "rollup-plugin-livereload": "^2.0.5",
     "rollup-plugin-postcss": "^4.0.0",
