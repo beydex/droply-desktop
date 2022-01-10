@@ -4,6 +4,6 @@
 
 # Build and dependencies
 node_modules
-public/[^index.html]*
 dist
+electron
 

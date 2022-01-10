@@ -11,8 +11,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "web/*": [
-        "./src/web/*"
+      "main/*": [
+        "./src/main/*"
       ]
     }
   }

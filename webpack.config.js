@@ -3,15 +3,15 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 
 let buildMode = process.env.BUILD_MODE
-let outputPath = path.join(__dirname, "dist");
+let outputPath = path.join(__dirname, "dist/app");
 
 module.exports = {
   mode: buildMode,
   devtool: buildMode === "development" ? "source-map" : false,
 
   entry: {
-    web: {
-      import: "./src/web/index.tsx",
+    main: {
+      import: "./src/main/index.tsx",
     },
   },
 
@@ -31,7 +31,7 @@ module.exports = {
       ".scss"
     ],
     alias: {
-      web: path.resolve(__dirname, "src/web"),
+      main: path.resolve(__dirname, "src/main"),
     }
   },
 
@@ -74,9 +74,9 @@ module.exports = {
     }),
 
     new HtmlWebpackPlugin({
-      template: "./src/web/index.html",
-      filename: "web.html",
-      chunks: ["web"]
+      template: "./src/main/index.html",
+      filename: "main.html",
+      chunks: ["main"]
     }),
   ],
 

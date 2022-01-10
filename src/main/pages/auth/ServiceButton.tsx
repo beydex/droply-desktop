@@ -1,6 +1,6 @@
 import React from "react"
 import Styles from "./ServiceButton.module.scss"
-import classes from "web/classes";
+import {classes} from "main/utils";
 
 interface Props {
   icon: string
