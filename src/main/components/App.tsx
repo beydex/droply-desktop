@@ -1,11 +1,11 @@
 import React from "react"
 import Styles from "./App.module.scss"
-import Logo from "assets/Logo.svg"
+import {Page} from "main/pages/auth/Page";
 
 export default function App() {
   return (
     <div className={Styles.App}>
-      <img className={Styles.Logo} src={Logo}/>
+      <Page/>
     </div>
   )
 }
