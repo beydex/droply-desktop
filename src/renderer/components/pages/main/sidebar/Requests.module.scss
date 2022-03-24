@@ -1,0 +1,18 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+.YesIcon {
+    margin-left: 40px;
+    color: #00E676;
+    font-size: 30px;
+}
+
+.NoIcon {
+    margin-left: 15px;
+    color: #FF1744;
+    font-size: 30px;
+}
+
+.Subscript {
+    display: flex;
+    flex-direction: row;
+}

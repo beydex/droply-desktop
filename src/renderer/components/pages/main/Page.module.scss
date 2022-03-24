@@ -1,0 +1,26 @@
+@import "~renderer/styles/base.scss";
+
+.Container {
+    display: flex;
+    flex-direction: row;
+}
+
+.Workspace {
+    display: flex;
+    flex-direction: column;
+    margin-top: 60px;
+    margin-bottom: 60px;
+    margin-left: 60px;
+}
+
+.Sidebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.Description {
+    font-size: 16px;
+    color: #818181;
+}

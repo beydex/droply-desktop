@@ -1,0 +1,35 @@
+.FileDragNDrop {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.PlaceHolder {
+    width: 420px;
+    height: 420px;
+    background-color: gray;
+}
+
+.Label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+.LabelTop {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.LabelBottom {
+    font-size: 20px;
+    color: #818181;
+    font-weight: normal;
+}
+
+.Logo {
+    height: 420px;
+}

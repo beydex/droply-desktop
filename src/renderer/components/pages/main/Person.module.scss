@@ -1,0 +1,28 @@
+.Person {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+.Info {
+    display: flex;
+    flex-direction: column;
+}
+
+.Avatar {
+    height: 55px;
+    margin-right: 20px;
+    border-radius: 28px;
+}
+
+.Name {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.Subscript {
+    color: #818181;
+}
+

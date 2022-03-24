@@ -1,0 +1,73 @@
+@import "~renderer/styles/colors.scss";
+
+.Window {
+    width: 480px;
+    height: 570px;
+    border: 0 #E5E5E5 solid;
+    border-radius: 50px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+.Logo {
+    height: 150px;
+    width: 150px;
+    transform: scale(3) translateY(60px); // (150 + ((X - 450) / 2 - 30)) / 3, X: Windows's height
+    margin-top: 30px;
+}
+
+.Content {
+    opacity: 0;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .Title {
+        font-weight: 700;
+        font-size: 25px;
+        margin-top: 20px;
+    }
+
+    .Hint {
+        margin-top: 10px;
+        color: $hint_color;
+        font-size: 20px;
+        font-weight: 400;
+    }
+
+    .HintAction {
+        color: $base_color;
+        font-weight: 500;
+    }
+
+    .HintError {
+        color: $error_color;
+        font-weight: 500;
+    }
+
+    .GoogleButton {
+        margin-top: 50px;
+    }
+
+    .Spacer {
+        flex: 1;
+    }
+
+    .Legal {
+        margin-bottom: 20px;
+
+        color: $hint_color;
+        font-weight: 400;
+        text-align: center;
+
+        a {
+            color: $base_color;
+            font-weight: 500;
+            text-decoration: none;
+        }
+    }
+}
