@@ -1,0 +1,26 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+@import "~renderer/styles/colors.scss";
+@import "~renderer/styles/utils.scss";
+
+.Hint {
+    color: $hint_color;
+}
+
+.HintFiles {
+    color: $base_color;
+}
+
+.AcceptIcon {
+    margin-left: 40px;
+    color: #00E676;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.RejectIcon {
+    margin-left: 15px;
+    color: #FF1744;
+    font-size: 30px;
+    cursor: pointer;
+}

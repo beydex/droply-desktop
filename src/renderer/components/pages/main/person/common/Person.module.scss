@@ -1,14 +1,10 @@
+@import "~renderer/styles/utils.scss";
+
 .Person {
     display: flex;
     flex-direction: row;
     align-items: center;
     font-size: 16px;
-    margin-top: 20px;
-}
-
-.Info {
-    display: flex;
-    flex-direction: column;
 }
 
 .Avatar {
@@ -17,12 +13,13 @@
     border-radius: 28px;
 }
 
+.Info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .Name {
     font-size: 16px;
     font-weight: 500;
 }
-
-.Subscript {
-    color: #818181;
-}
-

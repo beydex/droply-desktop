@@ -3,7 +3,7 @@ import Styles from "./Page.module.scss"
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Logo} from "renderer/components/Logo";
 
-export function Page() {
+export function Initial() {
     return (
         <div className={BaseHelper.classes(Styles.Page, Styles.Center)}>
             <div className={Styles.Logo}>
@@ -12,4 +12,3 @@ export function Page() {
         </div>
     )
 }
-

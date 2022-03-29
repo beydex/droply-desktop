@@ -1,36 +1,63 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import Styles from './Page.module.scss'
 
-import {Account} from './sidebar/Account';
-import {DeviseCode} from './sidebar/DeviseCode';
-import {FileDragNDrop} from './workspace/FileDragNDrop';
-import {Requests} from './sidebar/Requests';
-import {Transfers} from './sidebar/Transfers';
 import BaseHelper from 'renderer/helpers/BaseHelper';
-import {User, UserRepository} from 'renderer/repository/UserRepository';
+import {AccountCard} from './sidebar/AccountCard';
+import {CodeCard} from './sidebar/CodeCard';
+import {FileDragNDrop} from './workspace/FileDragNDrop';
+import {RequestsCard} from './sidebar/RequestsCard';
+import {TransfersCard} from './sidebar/TransfersCard';
+import {Logo} from "renderer/components/Logo";
+import gsap from "gsap";
+
+const ANIMATION_DELAY = 1000
 
 export function Page() {
-    let [getUser, setUser] = useState<User>({
-        name: "",
-        email: "",
-        avatarUrl: null
-    });
+    let logoRef = useRef();
+    let contentRef = useRef();
 
-    UserRepository.Instance.getUser().then((user) => {
-        setUser(user);
-    });
+    useEffect(() => {
+        setTimeout(runAnimation, ANIMATION_DELAY)
+    }, [])
+
+    function runAnimation() {
+        let timeline = gsap.timeline()
+
+        timeline.to(logoRef.current, {
+            opacity: 0,
+            scale: 0.5,
+
+            ease: "expo.out",
+            duration: 0.3,
+        }, "logo")
+
+        timeline.to(contentRef.current, {
+            opacity: 1,
+            transform: "scale(1)",
+
+            ease: "expo.out",
+            duration: 0.3,
+        }, "logo+=0.2")
+    }
 
     return (
-        <div className={BaseHelper.classes(Styles.Page, Styles.Container)}>
-            <div className={BaseHelper.classes(Styles.Workspace)}>
-                <Account user={getUser}/>
-                <DeviseCode/>
-                <Requests/>
-                <Transfers/>
+        <div className={Styles.Page}>
+            <div ref={logoRef} className={Styles.Logo}>
+                <Logo/>
             </div>
 
-            <div className={BaseHelper.classes(Styles.Sidebar)}>
-                <FileDragNDrop/>
+            <div ref={contentRef} className={Styles.Container}>
+                <div className={BaseHelper.classes(Styles.Sidebar)}>
+                    <AccountCard/>
+                    <CodeCard/>
+
+                    <RequestsCard/>
+                    <TransfersCard/>
+                </div>
+
+                <div className={BaseHelper.classes(Styles.Workspace)}>
+                    <FileDragNDrop/>
+                </div>
             </div>
         </div>
     )

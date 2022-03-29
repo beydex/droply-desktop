@@ -1,0 +1,20 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+@import "~renderer/styles/colors.scss";
+
+.Hint {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: $hint_color;
+}
+
+.HintFiles {
+    color: $base_color;
+}
+
+.ArrowIcon {
+    font-size: 15px;
+    color: $base_color;
+}
+

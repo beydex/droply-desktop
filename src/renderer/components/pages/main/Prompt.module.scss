@@ -1,0 +1,60 @@
+@import "~renderer/styles/colors.scss";
+
+.Prompt {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    background: rgb(0, 0, 0, 50%);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.Hide {
+    display: none;
+}
+
+.Window {
+    box-sizing: border-box;
+    height: 136px;
+    width: 340px;
+    padding: 20px 30px;
+    background: white;
+    border-radius: 10px;
+}
+
+.Title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.Buttons {
+    display: flex;
+}
+
+.Button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 125px;
+    height: 46px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 5px;
+}
+
+.Continue {
+    background: $base_color;
+    color: white;
+}
+
+.Cancel {
+    margin-left: 30px;
+    color: $error_color;
+}

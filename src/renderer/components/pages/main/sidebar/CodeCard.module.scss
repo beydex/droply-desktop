@@ -1,7 +1,13 @@
 @import "~renderer/assets/fonts/icons/style.scss";
 
-.DeviseCode {
+.Code {
     color: #2979FF;
+    font-size: 25px;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: row;
+    font-weight: 500;
+    cursor: pointer;
 }
 
 .CopyIcon {
@@ -10,10 +16,3 @@
     padding-top: 5px;
 }
 
-.Code {
-    font-size: 25px;
-    margin-top: 20px;
-    display: flex;
-    flex-direction: row;
-    font-weight: 500;
-}

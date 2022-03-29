@@ -22,45 +22,39 @@ export function Window({actionHint, errorHint, onGoogleAuth}: Props) {
     let logoRef = useRef();
     let contentRef = useRef();
 
-    useEffect(runAnimation, [])
+    useEffect(() => {
+        setTimeout(runAnimation, ANIMATION_DELAY)
+    }, [])
 
     function runAnimation() {
-        let timeline = gsap.timeline()
+        gsap.timeline()
+            .to(logoRef.current, {
+                transform: "scale(1) translateY(0)",
 
-        timeline.to(logoRef.current, {
-            transform: "scale(1) translateY(0)",
+                ease: "expo.out",
+                duration: 0.3,
+            }, "first")
+            .to(contentRef.current, {
+                opacity: 1,
 
-            ease: "expo.out",
-            duration: 0.5,
-        }, "logo")
+                ease: "expo.out",
+                duration: 0.3,
+            }, "first+=0.2")
+            .to(windowRef.current, {
+                borderWidth: 1,
 
-        timeline.to(contentRef.current, {
-            opacity: 1,
-
-            ease: "expo.out",
-            duration: 0.5,
-        }, "logo+=0.3")
-
-        timeline.to(windowRef.current, {
-            borderWidth: 1,
-
-            ease: "expo.out",
-            duration: 0.5,
-        }, "logo+=0.3")
+                ease: "expo.out",
+                duration: 0.3,
+            }, "first+=0.2")
     }
 
     return (
-        <div className={Styles.Window}
-             ref={windowRef}>
-
-            <div className={Styles.Logo}
-                 ref={logoRef}>
+        <div ref={windowRef} className={Styles.Window}>
+            <div ref={logoRef} className={Styles.Logo}>
                 <Logo/>
             </div>
 
-            <div className={Styles.Content}
-                 ref={contentRef}>
-
+            <div ref={contentRef} className={Styles.Content}>
                 <div className={Styles.Title}>
                     Welcome to Droply!
                 </div>

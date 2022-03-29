@@ -1,7 +1,11 @@
 import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
+import {EventEmitter} from "events";
 
+
+/**
+ * "auth/google" request
+ */
 const AUTH_PATH = "auth"
-const AUTH_GOOGLE_PATH = "auth/google"
 
 interface AuthRequest {
     token: string
@@ -9,6 +13,11 @@ interface AuthRequest {
 
 interface AuthResponse extends DroplyResponse {
 }
+
+/**
+ * "auth/google" request
+ */
+const AUTH_GOOGLE_PATH = "auth/google"
 
 interface AuthGoogleRequest {
     token: string
@@ -18,12 +27,45 @@ interface AuthGoogleResponse extends DroplyResponse {
     token: string
 }
 
-export class AuthRepository {
+/**
+ * "logout" request
+ */
+const LOGOUT_PATH = "logout"
+
+interface LogoutRequest {
+}
+
+interface LogoutResponse extends DroplyResponse {
+}
+
+enum AuthRepositoryEvent {
+    AUTH = "auth"
+}
+
+export class AuthRepository extends EventEmitter {
     public static Instance = new AuthRepository()
+
+    private authenticated = false
     private token?: string
 
+    public async waitAuth(): Promise<void> {
+        if (this.authenticated) {
+            return;
+        }
+
+        return new Promise(resolve => {
+            this.once(AuthRepositoryEvent.AUTH, () => {
+                resolve()
+            })
+        })
+    }
+
     public async authByToken(): Promise<boolean> {
-        let token = await this.readToken()
+        if (this.authenticated) {
+            return true
+        }
+
+        let token = await AuthRepository.readToken()
         if (token == "") {
             return false
         }
@@ -34,42 +76,66 @@ export class AuthRepository {
                 request: {token}
             })
 
-        console.log("RESPONSE", response)
-
-        if (!response.success) {
-            // We have bad token, so clear it
-            await this.writeToken("")
+        if (response.success) {
+            await this.authFinish(token)
         }
 
         return response.success
     }
 
-    public async authByGoogle(token: string): Promise<boolean> {
+    public async authByGoogle(googleToken: string): Promise<boolean> {
+        if (this.authenticated) {
+            return true
+        }
+
         let response = await WebsocketHelper.Instance
             .request<AuthGoogleRequest, AuthGoogleResponse>({
                 path: AUTH_GOOGLE_PATH,
-                request: {token: token}
+                request: {token: googleToken}
             })
 
-        console.log("GOT RESPONSE", response)
-
         if (response.success) {
-            await this.writeToken(response.token)
+            await this.authFinish(response.token)
         }
 
         return response.success
     }
 
-    private async readToken(): Promise<string> {
-        if (this.token == null) {
-            this.token = await window.externalApi.tokenStorage.readToken()
-        }
+    private async authFinish(token: string) {
+        await AuthRepository.writeToken(token)
 
-        return this.token
+        this.authenticated = true
+        this.token = token
+
+        this.emit(AuthRepositoryEvent.AUTH)
     }
 
-    private async writeToken(token: string): Promise<void> {
+    public async logout(): Promise<boolean> {
+        if (!this.authenticated) {
+            return true
+        }
+
+        let response = await WebsocketHelper.Instance
+            .request<LogoutRequest, LogoutResponse>({
+                path: LOGOUT_PATH,
+                request: {}
+            })
+
+        if (response.success) {
+            await AuthRepository.writeToken("")
+
+            this.authenticated = false
+            this.token = ""
+        }
+
+        return response.success
+    }
+
+    private static async readToken(): Promise<string> {
+        return await window.externalApi.tokenStorage.readToken()
+    }
+
+    private static async writeToken(token: string): Promise<void> {
         await window.externalApi.tokenStorage.writeToken(token)
-        this.token = token
     }
 }

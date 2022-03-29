@@ -43,8 +43,25 @@ export default class WebsocketHelper extends EventEmitter {
         this.queue = []
 
         // Starting to send requests from queue
-        this.sendRequests().then(() => {
-            // Ignore
+        this.sendRequests().then()
+    }
+
+    public async waitOpen(): Promise<void> {
+        return new Promise<void>(resolve => {
+            if (this.websocket.readyState == WebSocket.OPEN) {
+                resolve()
+                return
+            }
+
+            this.once(WebsocketHelperEvent.OPEN, () => {
+                console.log("SOCKET OPENED")
+                // Setting to PENDING state
+                for (let item of this.queue) {
+                    item.state = QueueItemState.PENDING
+                }
+
+                resolve()
+            })
         })
     }
 
@@ -60,24 +77,6 @@ export default class WebsocketHelper extends EventEmitter {
             });
 
             this.emit(WebsocketHelperEvent.REQUEST)
-        })
-    }
-
-    public async waitOpen(): Promise<void> {
-        return new Promise<void>(resolve => {
-            if (this.websocket.readyState == WebSocket.OPEN) {
-                resolve()
-                return
-            }
-
-            this.once(WebsocketHelperEvent.OPEN, () => {
-                // Setting to PENDING state
-                for (let item of this.queue) {
-                    item.state = QueueItemState.PENDING
-                }
-
-                resolve()
-            })
         })
     }
 
@@ -103,9 +102,8 @@ export default class WebsocketHelper extends EventEmitter {
         // noinspection InfiniteLoopJS
         while (true) {
             try {
-                this.websocket.send(
-                    JSON.stringify(await this.getRequest())
-                )
+                let request = await this.getRequest()
+                this.websocket.send(JSON.stringify(request))
             } catch (e) {
                 // Ignore
             }
@@ -151,8 +149,8 @@ export default class WebsocketHelper extends EventEmitter {
     }
 
     private handleClose() {
-        this.websocket = this.createWebsocket()
         this.emit(WebsocketHelperEvent.CLOSE)
+        this.websocket = this.createWebsocket()
     }
 
     private handleMessage(message: MessageEvent<string>) {

@@ -1,0 +1,16 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+@import "~renderer/styles/utils.scss";
+@import "~renderer/styles/colors.scss";
+
+.Hint {
+    color: $hint_color;
+}
+
+.ChangeIcon {
+    border-radius: 25px;
+    font-size: 30px;
+    color: #2979FF;
+    margin-left: 25px;
+    cursor: pointer;
+}
