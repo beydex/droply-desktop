@@ -4,13 +4,16 @@ import Styles from './Button.module.scss';
 import BaseHelper from 'renderer/helpers/BaseHelper';
 
 interface Props {
-    children?: React.ReactNode,
     className?: string
+    children?: React.ReactNode,
+
+    onClick?: () => void
 }
 
-export function Button({children, className}: Props) {
+export function Button({children, className, onClick}: Props) {
     return (
-        <div className={BaseHelper.classes(Styles.Button, className)}>
+        <div className={BaseHelper.classes(Styles.Button, className)}
+             onClick={() => onClick?.()}>
             {children}
         </div>
     );
