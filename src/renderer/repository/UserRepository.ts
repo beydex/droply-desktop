@@ -1,5 +1,5 @@
 import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
-import {AuthRepository} from "renderer/repository/AuthRepository";
+import {AuthRepository, AuthRepositoryEvent} from "renderer/repository/AuthRepository";
 
 /**
  * "profile" request
@@ -26,6 +26,10 @@ export class UserRepository {
 
     private user?: User = null
 
+    constructor() {
+        this.setHandlers()
+    }
+
     public async getUser(): Promise<User> {
         if (this.user == null) {
             await this.fetchUser()
@@ -39,7 +43,7 @@ export class UserRepository {
 
         let response = await WebsocketHelper.Instance
             .request<ProfileRequest, ProfileResponse>({
-                path: "profile",
+                path: PROFILE_PATH,
                 request: {}
             })
 
@@ -48,5 +52,12 @@ export class UserRepository {
             email: response.email,
             avatar: response.avatarUrl,
         }
+    }
+
+    private setHandlers() {
+        AuthRepository.Instance.on(AuthRepositoryEvent.LOGOUT, () => {
+            console.log("LOGOUT")
+            this.user = null
+        })
     }
 }

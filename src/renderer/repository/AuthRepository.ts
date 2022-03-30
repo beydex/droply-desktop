@@ -28,18 +28,19 @@ interface AuthGoogleResponse extends DroplyResponse {
 }
 
 /**
- * "logout" request
+ * "auth/logout" request
  */
-const LOGOUT_PATH = "logout"
+const AUTH_LOGOUT_PATH = "auth/logout"
 
-interface LogoutRequest {
+interface AuthLogoutRequest {
 }
 
-interface LogoutResponse extends DroplyResponse {
+interface AuthLogoutResponse extends DroplyResponse {
 }
 
-enum AuthRepositoryEvent {
-    AUTH = "auth"
+export enum AuthRepositoryEvent {
+    AUTH = "auth",
+    LOGOUT = "logout"
 }
 
 export class AuthRepository extends EventEmitter {
@@ -116,19 +117,26 @@ export class AuthRepository extends EventEmitter {
         }
 
         let response = await WebsocketHelper.Instance
-            .request<LogoutRequest, LogoutResponse>({
-                path: LOGOUT_PATH,
+            .request<AuthLogoutRequest, AuthLogoutResponse>({
+                path: AUTH_LOGOUT_PATH,
                 request: {}
             })
+        console.log(response)
 
         if (response.success) {
-            await AuthRepository.writeToken("")
-
-            this.authenticated = false
-            this.token = ""
+            await this.logoutFinish()
         }
 
         return response.success
+    }
+
+    private async logoutFinish() {
+        await AuthRepository.writeToken("")
+
+        this.authenticated = false
+        this.token = ""
+
+        this.emit(AuthRepositoryEvent.LOGOUT)
     }
 
     private static async readToken(): Promise<string> {
