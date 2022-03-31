@@ -1,4 +1,4 @@
-import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
+import WebsocketHelper, {DroplyResponse, WebsocketHelperEvent} from "renderer/helpers/WebsocketHelper";
 import {EventEmitter} from "events";
 
 
@@ -49,6 +49,11 @@ export class AuthRepository extends EventEmitter {
     private authenticated = false
     private token?: string
 
+    constructor() {
+        super();
+        this.setHandlers()
+    }
+
     public async waitAuth(): Promise<void> {
         if (this.authenticated) {
             return;
@@ -61,7 +66,7 @@ export class AuthRepository extends EventEmitter {
         })
     }
 
-    public async authByToken(): Promise<boolean> {
+    private async authByToken(): Promise<boolean> {
         if (this.authenticated) {
             return true
         }
@@ -78,7 +83,7 @@ export class AuthRepository extends EventEmitter {
             })
 
         if (response.success) {
-            await this.authFinish(token)
+            await this.finishAuth(token)
         }
 
         return response.success
@@ -96,19 +101,10 @@ export class AuthRepository extends EventEmitter {
             })
 
         if (response.success) {
-            await this.authFinish(response.token)
+            await this.finishAuth(response.token)
         }
 
         return response.success
-    }
-
-    private async authFinish(token: string) {
-        await AuthRepository.writeToken(token)
-
-        this.authenticated = true
-        this.token = token
-
-        this.emit(AuthRepositoryEvent.AUTH)
     }
 
     public async logout(): Promise<boolean> {
@@ -121,16 +117,37 @@ export class AuthRepository extends EventEmitter {
                 path: AUTH_LOGOUT_PATH,
                 request: {}
             })
-        console.log(response)
 
         if (response.success) {
-            await this.logoutFinish()
+            await this.finishLogout()
         }
 
         return response.success
     }
 
-    private async logoutFinish() {
+    private setHandlers() {
+        WebsocketHelper.Instance.on(WebsocketHelperEvent.OPEN, async () => {
+            let result = await this.authByToken()
+            if (!result) {
+                this.emit(AuthRepositoryEvent.LOGOUT)
+            }
+        })
+
+        WebsocketHelper.Instance.on(WebsocketHelperEvent.CLOSE, () => {
+            this.authenticated = false
+        })
+    }
+
+    private async finishAuth(token: string) {
+        await AuthRepository.writeToken(token)
+
+        this.authenticated = true
+        this.token = token
+
+        this.emit(AuthRepositoryEvent.AUTH)
+    }
+
+    private async finishLogout() {
         await AuthRepository.writeToken("")
 
         this.authenticated = false

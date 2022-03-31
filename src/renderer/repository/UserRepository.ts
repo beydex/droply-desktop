@@ -56,7 +56,6 @@ export class UserRepository {
 
     private setHandlers() {
         AuthRepository.Instance.on(AuthRepositoryEvent.LOGOUT, () => {
-            console.log("LOGOUT")
             this.user = null
         })
     }

@@ -56,6 +56,7 @@ export function Page() {
                 </div>
 
                 <div className={BaseHelper.classes(Styles.Workspace)}>
+
                     <FileDragNDrop/>
                 </div>
             </div>
