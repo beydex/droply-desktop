@@ -4,11 +4,12 @@ import Styles from './Page.module.scss'
 import BaseHelper from 'renderer/helpers/BaseHelper';
 import {AccountCard} from './sidebar/AccountCard';
 import {CodeCard} from './sidebar/CodeCard';
-import {FileDragNDrop} from './workspace/FileDragNDrop';
+import {FileDragNDrop} from './workspace/drag_and_drop/FileDragNDrop';
 import {RequestsCard} from './sidebar/RequestsCard';
 import {TransfersCard} from './sidebar/TransfersCard';
 import {Logo} from "renderer/components/Logo";
 import gsap from "gsap";
+import { RecipentWindow } from './workspace/choose_recipent/RecipentWindow';
 
 const ANIMATION_DELAY = 1000
 
@@ -55,11 +56,16 @@ export function Page() {
                     <TransfersCard/>
                 </div>
 
+                
                 <div className={BaseHelper.classes(Styles.Workspace)}>
-
-                    <FileDragNDrop/>
+                    <RecipentWindow/>
                 </div>
             </div>
         </div>
     )
 }
+/*
+<div className={BaseHelper.classes(Styles.Workspace)}>
+                    <FileDragNDrop/>
+                </div>
+*/

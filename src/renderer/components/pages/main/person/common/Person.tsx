@@ -9,11 +9,13 @@ interface Props {
 
     hint?: React.ReactNode,
     action?: React.ReactNode,
+
+    className?: string,
 }
 
-export function Person({name, avatar, hint, action}: Props) {
+export function Person({name, avatar, hint, action, className}: Props) {
     return (
-        <div className={Styles.Person}>
+        <div className={BaseHelper.classes(Styles.Person, className)}>
             <img className={Styles.Avatar} src={avatar} alt=""/>
 
             <div className={Styles.Info}>
