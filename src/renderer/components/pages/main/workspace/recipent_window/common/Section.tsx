@@ -2,15 +2,15 @@ import React from 'react'
 import Styles from './Section.module.scss'
 
 interface Props {
-    name: string
+    title: string
     children?: React.ReactNode
 }
 
-export function Section({name, children}: Props) {
+export function Section({title, children}: Props) {
     return (
-        <div>
-            <div className={Styles.Subsection}>
-                {name}
+        <div className={Styles.Section}>
+            <div className={Styles.Title}>
+                {title}
             </div>
 
             {children}

@@ -1,12 +1,15 @@
 import {Button} from './Button';
 import React from 'react';
-
-import Styles from './FileDragNDrop.module.scss';
+import Styles from './Window.module.scss';
 
 import icon from 'renderer/assets/images/DragNDrop.png';
 import {FileRepository} from "renderer/repository/FileRepository";
+import {useNavigate} from "react-router-dom";
+import {MainPageRouting} from "renderer/components/pages/main/Page";
 
-export function FileDragNDrop(props) {
+export function Window() {
+    let navigate = useNavigate();
+
     return (
         <div className={Styles.FileDragNDrop}>
             <img className={Styles.Logo} src={icon} alt=""/>
@@ -21,6 +24,8 @@ export function FileDragNDrop(props) {
             <Button onClick={async () => {
                 let files = await FileRepository.Instance.getFiles()
                 files.map(file => console.log(file.name()))
+
+                navigate(MainPageRouting.Recipient)
             }}>Choose</Button>
         </div>
     )

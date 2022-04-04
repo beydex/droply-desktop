@@ -41,7 +41,7 @@ export function AccountCard(props: Props) {
     async function logout() {
         await AuthRepository.Instance.logout()
 
-        navigate(AppRoting.AuthScreen)
+        navigate(AppRoting.Auth)
     }
 
     return (

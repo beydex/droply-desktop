@@ -1,36 +1,36 @@
-import React, {useState} from 'react'
+import React from 'react'
 import Styles from './Window.module.scss'
-import BaseHelper from 'renderer/helpers/BaseHelper'
-import {Section} from './common/Section'
-import {CodeInput} from './CodeInput'
-import {SearchSection} from './SearchSection'
-import {LocalNetwork} from './LocalNetwork'
-import {SendButton} from './SendButton'
-import {TransferHistory} from './History'
-import {CodeRepository} from "renderer/repository/CodeRepository";
-import {User} from "renderer/repository/UserRepository";
+import BaseHelper from "renderer/helpers/BaseHelper";
+import {SearchSection} from "renderer/components/pages/main/workspace/recipent_window/SearchSection";
+import {LocalSection} from "renderer/components/pages/main/workspace/recipent_window/LocalSection";
+import {HistorySection} from "renderer/components/pages/main/workspace/recipent_window/HistorySection";
+import {useNavigate} from "react-router-dom";
 
 export function Window() {
-    let [user, setUser] = useState<User>(null);
+    let navigate = useNavigate();
 
-    async function onCode(code: number) {
-        let user = await CodeRepository.Instance.findUser(code)
-        setUser(user)
+    function onArrowClick() {
+        navigate("../")
     }
 
     return (
-        <div className={Styles.Container}>
-            <Section subscript={'They will receive a notification'}>
-                    <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                        arrow_back
-                    </span>&nbsp;
-                Choose a recipient
-            </Section>
-            <CodeInput onCode={onCode}/>
-            <SearchSection user={user}/>
-            <LocalNetwork/>
-            <TransferHistory/>
-            <SendButton/>
+        <div className={Styles.Window}>
+            <div className={Styles.Title}>
+                <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}
+                      onClick={onArrowClick}>
+                    arrow_back
+                </span>
+                <div className={Styles.TitleText}>
+                    Choose a recipient
+                </div>
+            </div>
+            <div className={Styles.Hint}>
+                They will receive a notification
+            </div>
+
+            <SearchSection/>
+            <LocalSection/>
+            <HistorySection/>
         </div>
     )
 }

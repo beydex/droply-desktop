@@ -1,5 +1,10 @@
 @import "~renderer/assets/fonts/icons/style.scss";
 
+.Person {
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
 .Hint {
     font-size: 14px;
     color: #A8A8A8;

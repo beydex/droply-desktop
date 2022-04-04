@@ -4,14 +4,21 @@ import Styles from './Page.module.scss'
 import BaseHelper from 'renderer/helpers/BaseHelper';
 import {AccountCard} from './sidebar/AccountCard';
 import {CodeCard} from './sidebar/CodeCard';
-import {FileDragNDrop} from './workspace/file_window/FileDragNDrop';
 import {RequestsCard} from './sidebar/RequestsCard';
 import {TransfersCard} from './sidebar/TransfersCard';
 import {Logo} from "renderer/components/Logo";
+
+import {Window as FileWindow} from "renderer/components/pages/main/workspace/file_window/Window";
+import {Window as RecipientWindow} from "renderer/components/pages/main/workspace/recipent_window/Window";
+
+import {Route, Routes} from "react-router-dom";
 import gsap from "gsap";
-import { Window } from './workspace/recipent_window/Window';
 
 const ANIMATION_DELAY = 1000
+
+export class MainPageRouting {
+    public static Recipient = "recipient"
+}
 
 export function Page() {
     let logoRef = useRef();
@@ -56,16 +63,20 @@ export function Page() {
                     <TransfersCard/>
                 </div>
 
-                
+
                 <div className={BaseHelper.classes(Styles.Workspace)}>
-                    <Window/>
+                    <Routes>
+                        <Route index element={<FileWindow/>}/>
+                        <Route path={MainPageRouting.Recipient} element={<RecipientWindow/>}/>
+                    </Routes>
                 </div>
             </div>
         </div>
     )
 }
+
 /*
 <div className={BaseHelper.classes(Styles.Workspace)}>
-                    <FileDragNDrop/>
+                    <Window/>
                 </div>
 */

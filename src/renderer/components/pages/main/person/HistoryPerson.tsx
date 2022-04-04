@@ -8,11 +8,9 @@ interface Props {
     name: string,
     avatar: string,
     hint: string,
-
-    className?: string,
 }
 
-export function HistoryPerson({name, avatar, hint, className}: Props) {
+export function HistoryPerson({name, avatar, hint}: Props) {
     return (
         <Person
             name={name}
@@ -29,7 +27,7 @@ export function HistoryPerson({name, avatar, hint, className}: Props) {
                     </span>
                 </>
             }
-            className={BaseHelper.classes(Styles.HistoryPerson, className)}
-            />
+            className={Styles.Person}
+        />
     )
 }

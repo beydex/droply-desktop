@@ -1,25 +1,31 @@
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import {SearchPerson} from '../../person/SearchPerson'
 import {User} from "renderer/repository/UserRepository";
 import {Section} from "renderer/components/pages/main/workspace/recipent_window/common/Section";
+import {CodeInput} from "renderer/components/pages/main/workspace/recipent_window/CodeInput";
+import {CodeRepository} from "renderer/repository/CodeRepository";
+import {Loading} from "renderer/components/pages/main/workspace/recipent_window/common/Loading";
 
-interface Props {
-    user?: User
-}
+export function SearchSection() {
+    let [user, setUser] = useState<User>(null);
+    let [loading, setLoading] = useState<string>("To search users enter code above")
 
-export function SearchSection(props: Props) {
-    let [user, setUser] = useState<User>(null)
+    async function onCode(code: number) {
+        let user = await CodeRepository.Instance.findUser(code)
+        if (user == null) {
+            setLoading("User not found")
+        }
 
-    useEffect(() => {
-        setUser(props.user)
-    }, [props.user])
+        setUser(user)
+    }
 
     return (
-        <Section name="Search results">
+        <Section title="Search">
+            <CodeInput onCode={onCode}/>
             {
                 user
                     ? <SearchPerson name={user.name} avatar={user.avatarUrl} selected={false}/>
-                    : <div>To search users, enter code above</div>
+                    : <Loading text={loading}/>
             }
         </Section>
     )

@@ -1,13 +1,34 @@
 @import "~renderer/assets/fonts/icons/style.scss";
+@import "~renderer/styles/colors.scss";
 
-.ArrowIcon {
-    height: 22px;
-    cursor: pointer;
-}
-
-.Container {
+.Window {
     border: 1px solid #E5E5E5;
     padding: 40px;
     border-radius: 20px;
     margin-top: 60px;
 }
+
+.Title {
+    display: flex;
+    align-items: center;
+}
+
+.TitleText {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.Hint {
+    margin-top: 10px;
+    margin-bottom: 30px;
+    font-size: 16px;
+    color: $hint_color;
+}
+
+.ArrowIcon {
+    height: 28px;
+    width: 28px;
+    cursor: pointer;
+    margin-right: 15px;
+}
+

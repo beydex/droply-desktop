@@ -9,8 +9,8 @@ import {Outlet as OutletPage} from "renderer/components/pages/outlet/Page";
 import {Page as MainPage} from "renderer/components/pages/main/Page";
 
 export class AppRoting {
-    public static AuthScreen = "/auth"
-    public static MainScreen = "/main"
+    public static Auth = "/auth"
+    public static Main = "/main"
 }
 
 export function App() {
@@ -24,21 +24,20 @@ export function App() {
 
     function setHandlers() {
         AuthRepository.Instance.on(AuthRepositoryEvent.AUTH, () => {
-            navigate(AppRoting.MainScreen)
+            navigate(AppRoting.Main)
         })
 
         AuthRepository.Instance.on(AuthRepositoryEvent.LOGOUT, () => {
-            navigate(AppRoting.AuthScreen)
+            navigate(AppRoting.Auth)
         })
     }
 
     return (
         <div className={Styles.App}>
             <Routes>
-                <Route path={AppRoting.AuthScreen} element={<AuthPage/>}/>
-                <Route path={AppRoting.MainScreen} element={<MainPage/>}/>
-
-                <Route path="*" element={<OutletPage/>}/>
+                <Route index element={<OutletPage/>}/>
+                <Route path={AppRoting.Auth} element={<AuthPage/>}/>
+                <Route path={AppRoting.Main + "/*"} element={<MainPage/>}/>
             </Routes>
         </div>
     )
