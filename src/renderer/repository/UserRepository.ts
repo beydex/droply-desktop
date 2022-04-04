@@ -18,7 +18,7 @@ interface ProfileResponse extends DroplyResponse {
 export class User {
     name: string
     email: string
-    avatar: string
+    avatarUrl: string
 }
 
 export class UserRepository {
@@ -50,7 +50,7 @@ export class UserRepository {
         this.user = {
             name: response.name,
             email: response.email,
-            avatar: response.avatarUrl,
+            avatarUrl: response.avatarUrl,
         }
     }
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Subsection } from './Section'
+import { Subsection } from './common/Section'
 import Styles from './LocalNetwork.module.scss'
 
 export function LocalNetwork() {

@@ -1,6 +1,6 @@
 import React from 'react'
 import { HistoryPerson } from '../../person/HistoryPerson'
-import { Subsection } from './Section'
+import { Subsection } from './common/Section'
 import Styles from './History.module.scss'
 
 import history_image1 from 'renderer/assets/images/Avatar3.png'

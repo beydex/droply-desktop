@@ -1,11 +1,10 @@
 @import "~renderer/assets/fonts/icons/style.scss";
 
-.Selected {
-    color: #2979FF;
+.Person {
     cursor: pointer;
 }
 
-.Person {
-    margin-top: 10px;
-    margin-bottom: 30px;
+.Selected {
+    color: #2979FF;
+    cursor: pointer;
 }

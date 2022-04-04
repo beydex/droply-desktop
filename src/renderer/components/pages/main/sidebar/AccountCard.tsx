@@ -23,7 +23,7 @@ export function AccountCard(props: Props) {
     let [user, setUser] = useState<User>({
         name: "",
         email: "",
-        avatar: null
+        avatarUrl: null
     });
 
     useEffect(() => {
@@ -53,7 +53,7 @@ export function AccountCard(props: Props) {
 
             <Person
                 name={user.name}
-                avatar={user.avatar}
+                avatar={user.avatarUrl}
 
                 hint={
                     <div className={BaseHelper.classes(Styles.Hint, Styles.Ellipsis)}>

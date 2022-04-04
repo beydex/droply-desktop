@@ -77,6 +77,7 @@ export default class WebsocketHelper extends EventEmitter {
             });
 
             this.emit(WebsocketHelperEvent.REQUEST)
+            console.log("request", request)
         })
     }
 
@@ -165,6 +166,7 @@ export default class WebsocketHelper extends EventEmitter {
             return;
         }
 
+        console.log("response", response)
         this.queue[0].callback(response)
         this.queue.shift()
     }

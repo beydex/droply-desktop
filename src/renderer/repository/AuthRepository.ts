@@ -3,7 +3,7 @@ import {EventEmitter} from "events";
 
 
 /**
- * "auth/google" request
+ * "auth" request
  */
 const AUTH_PATH = "auth"
 

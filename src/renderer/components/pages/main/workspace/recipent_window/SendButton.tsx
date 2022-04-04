@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button } from '../drag_and_drop/Button'
+import { Button } from '../file_window/Button'
 import Styles from './SendButton.module.scss'
 
 export function SendButton() {
