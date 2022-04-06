@@ -1,0 +1,18 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+@import "~renderer/styles/colors.scss";
+@import "~renderer/styles/utils.scss";
+
+.Hint {
+    color: $hint_color;
+}
+
+.HintFiles {
+    font-weight: 600;
+    color: $base_color;
+}
+
+.ArrowIcon {
+    font-size: 15px;
+    color: $base_color;
+}

@@ -1,0 +1,20 @@
+.Button {
+    width: 215px;
+    height: 56px;
+    border-radius: 10px;
+    background-color: #FF1744;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.Container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 100px;
+}

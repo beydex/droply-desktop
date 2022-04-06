@@ -1,0 +1,16 @@
+@import "~renderer/assets/fonts/icons/style.scss";
+
+.File {
+    background-color: #a9c9ff;
+    border-radius: 15px;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+}
+
+.FileIcon {
+    color: #2979FF;
+}
