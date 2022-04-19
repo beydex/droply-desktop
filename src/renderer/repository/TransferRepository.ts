@@ -255,7 +255,9 @@ export class TransferRepository extends EventEmitter {
         let peerConnection = new PeerConnection()
         await peerConnection.setOffer(update.content.offer)
 
-        this.transfers[update.content.requestId] = {
+        console.log(update)
+
+        this.transfers[update.content.requestId.toString()] = {
             outgoing: false,
             state: TransferState.REQUESTED,
 
@@ -289,7 +291,14 @@ export class TransferRepository extends EventEmitter {
     }
 
     private setHandlers() {
-        WebsocketHelper.Instance.on(REQUEST_RECEIVED_UPDATE_TYPE, this.handleRequest)
-        WebsocketHelper.Instance.on(REQUEST_ANSWERED_UPDATE_TYPE, this.handleAnswer)
+        WebsocketHelper.Instance.on(
+            REQUEST_RECEIVED_UPDATE_TYPE,
+            this.handleRequest.bind(this)
+        )
+
+        WebsocketHelper.Instance.on(
+            REQUEST_ANSWERED_UPDATE_TYPE,
+            this.handleAnswer.bind(this)
+        )
     }
 }

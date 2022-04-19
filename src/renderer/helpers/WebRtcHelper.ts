@@ -24,12 +24,22 @@ export class PeerConnection {
         return JSON.stringify(this.answer)
     }
 
-    public async setOffer(offer: string) {
-        await this.peerConnection.setRemoteDescription(JSON.parse(offer))
+    public async setOffer(offer: string): Promise<boolean> {
+        try {
+            await this.peerConnection.setRemoteDescription(JSON.parse(offer))
+            return true
+        } catch (e) {
+            return false
+        }
     }
 
     public async setAnswer(answer: string) {
-        await this.peerConnection.setRemoteDescription(JSON.parse(answer))
+        try {
+            await this.peerConnection.setRemoteDescription(JSON.parse(answer))
+            return true
+        } catch (e) {
+            return false
+        }
     }
 
     private async createOffer() {

@@ -26,7 +26,7 @@ export function RequestPerson({transfer, onAccept, onCancel}: Props) {
                         {transfer.outgoing ? "north" : "south"}
                     </span>
 
-                    &nbsp;{transfer.outgoing ? "Sending" : "Wants to send"}&nbsp;
+                    &nbsp;{transfer.outgoing ? "Sending" : "Receiving"}&nbsp;
                     <span className={Styles.HintFiles}>
                         {transfer.files.length} file(s)
                     </span>

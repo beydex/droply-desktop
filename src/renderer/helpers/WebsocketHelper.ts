@@ -172,16 +172,17 @@ export default class WebsocketHelper extends EventEmitter {
             return;
         }
 
+        if (parsedMessage.update) {
+            console.log("update", parsedMessage)
+            this.emit(parsedMessage.update.type, parsedMessage.update)
+            return;
+        }
+
         if (this.queue.length == 0) {
             return;
         }
 
-        if (parsedMessage.update) {
-            console.log("update", parsedMessage)
-            this.emit(parsedMessage.update.type, parsedMessage.update)
-        } else {
-            console.log("response", parsedMessage)
-            this.queue.shift().callback(parsedMessage)
-        }
+        console.log("response", parsedMessage)
+        this.queue.shift().callback(parsedMessage)
     }
 }

@@ -28,7 +28,6 @@ export function RequestsCard() {
     }
 
     async function onCancel(transfer: Transfer) {
-        console.log("CANCELING")
         if (transfer.outgoing) {
             await TransferRepository.Instance.cancelRequest(transfer.requestId)
         } else {
