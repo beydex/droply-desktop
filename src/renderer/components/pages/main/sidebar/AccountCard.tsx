@@ -21,6 +21,7 @@ export function AccountCard(props: Props) {
     let [logoutPrompt, setLogoutPrompt] = useState<boolean>(false)
 
     let [user, setUser] = useState<User>({
+        urid: 0,
         name: "",
         email: "",
         avatarUrl: null

@@ -10,15 +10,26 @@ interface ProfileRequest {
 }
 
 interface ProfileResponse extends DroplyResponse {
+    user: User
+}
+
+export class User {
+    urid: number
     name: string
     email: string
     avatarUrl: string
 }
 
-export class User {
+export class FullUser {
+    id: number
+    urid: number
     name: string
     email: string
     avatarUrl: string
+}
+
+export function isFullUser(user: User | FullUser): user is FullUser {
+    return (<FullUser>user).id != null
 }
 
 export class UserRepository {
@@ -47,10 +58,8 @@ export class UserRepository {
                 request: {}
             })
 
-        this.user = {
-            name: response.name,
-            email: response.email,
-            avatarUrl: response.avatarUrl,
+        if (response.success) {
+            this.user = response.user
         }
     }
 

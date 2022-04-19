@@ -10,6 +10,7 @@ import {Logo} from "renderer/components/Logo";
 
 import {Window as FileWindow} from "renderer/components/pages/main/workspace/file_window/Window";
 import {Window as RecipientWindow} from "renderer/components/pages/main/workspace/recipent_window/Window";
+import {Window as TransferWindow} from "renderer/components/pages/main/workspace/transfer_window/Window";
 
 import {Route, Routes} from "react-router-dom";
 import gsap from "gsap";
@@ -18,6 +19,7 @@ const ANIMATION_DELAY = 1000
 
 export class MainPageRouting {
     public static Recipient = "recipient"
+    public static Transfer = "transfer"
 }
 
 export function Page() {
@@ -68,6 +70,7 @@ export function Page() {
                     <Routes>
                         <Route index element={<FileWindow/>}/>
                         <Route path={MainPageRouting.Recipient} element={<RecipientWindow/>}/>
+                        <Route path={MainPageRouting.Transfer} element={<TransferWindow/>}/>
                     </Routes>
                 </div>
             </div>

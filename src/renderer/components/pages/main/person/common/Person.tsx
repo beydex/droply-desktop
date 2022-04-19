@@ -11,9 +11,11 @@ interface Props {
     action?: React.ReactNode,
 
     className?: string,
+
+    onClick?: () => void
 }
 
-export function Person({name, avatar, hint, action, className}: Props) {
+export function Person({name, avatar, hint, action, className, onClick}: Props) {
     let logo: React.ReactNode;
     if (typeof avatar == 'string') {
         logo = <img className={Styles.Avatar} src={avatar} alt=""/>;
@@ -24,7 +26,8 @@ export function Person({name, avatar, hint, action, className}: Props) {
         <div className={BaseHelper.classes(Styles.Person, className)}>
             {logo}
 
-            <div className={Styles.Info}>
+            <div className={Styles.Info}
+                 onClick={() => onClick?.()}>
                 <div className={BaseHelper.classes(Styles.Name, Styles.Ellipsis)}>
                     {name}
                 </div>

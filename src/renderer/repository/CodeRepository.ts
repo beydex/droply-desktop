@@ -25,8 +25,7 @@ interface CodeFindRequest {
     code: number
 }
 
-interface CodeFindResponse {
-    success: boolean
+interface CodeFindResponse extends DroplyResponse {
     user: User
 }
 

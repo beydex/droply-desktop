@@ -24,7 +24,7 @@ export function SearchSection() {
             <CodeInput onCode={onCode}/>
             {
                 user
-                    ? <SearchPerson name={user.name} avatar={user.avatarUrl} selected={false}/>
+                    ? <SearchPerson user={user}/>
                     : <Loading text={loading}/>
             }
         </Section>

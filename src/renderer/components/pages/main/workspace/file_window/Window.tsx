@@ -10,6 +10,12 @@ import {MainPageRouting} from "renderer/components/pages/main/Page";
 export function Window() {
     let navigate = useNavigate();
 
+    async function onButtonClick() {
+        await FileRepository.Instance.requestFiles()
+
+        navigate(MainPageRouting.Recipient)
+    }
+
     return (
         <div className={Styles.FileDragNDrop}>
             <img className={Styles.Logo} src={icon} alt=""/>
@@ -21,12 +27,10 @@ export function Window() {
                     Pick up a file or use a drag-n-drop
                 </div>
             </div>
-            <Button onClick={async () => {
-                let files = await FileRepository.Instance.getFiles()
-                files.map(file => console.log(file.name()))
 
-                navigate(MainPageRouting.Recipient)
-            }}>Choose</Button>
+            <Button onClick={onButtonClick}>
+                Choose
+            </Button>
         </div>
     )
 }

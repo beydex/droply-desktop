@@ -3,11 +3,23 @@
 @import "~renderer/styles/colors.scss";
 @import "~renderer/styles/utils.scss";
 
+.Person {
+    margin-top: 10px;
+}
+
 .Hint {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     color: $hint_color;
 }
 
 .HintFiles {
+    color: $base_color;
+}
+
+.ArrowIcon {
+    font-size: 15px;
     color: $base_color;
 }
 
@@ -21,6 +33,12 @@
 .RejectIcon {
     margin-left: 15px;
     color: #FF1744;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.CancelIcon {
+    color: $hint_color;
     font-size: 30px;
     cursor: pointer;
 }

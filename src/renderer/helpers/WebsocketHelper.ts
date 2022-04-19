@@ -1,6 +1,6 @@
 import {EventEmitter} from "events";
 
-const URL = "wss://test.mine.theseems.ru"
+import * as constants from "renderer/constants"
 
 export interface DroplyRequest<T> {
     path: string,
@@ -9,6 +9,16 @@ export interface DroplyRequest<T> {
 
 export interface DroplyResponse {
     success: boolean
+}
+
+export interface DroplyUpdate<T> {
+    content: T
+    type: string
+}
+
+export interface DroplyMessage {
+    success?: string
+    update?: DroplyUpdate<any>
 }
 
 interface QueueItem {
@@ -30,7 +40,7 @@ export enum WebsocketHelperEvent {
 }
 
 export default class WebsocketHelper extends EventEmitter {
-    public static Instance = new WebsocketHelper(URL);
+    public static Instance = new WebsocketHelper(constants.SERVER_ADDR);
     private readonly url: string
     private readonly queue: QueueItem[]
     private websocket: WebSocket
@@ -155,9 +165,9 @@ export default class WebsocketHelper extends EventEmitter {
     }
 
     private handleMessage(message: MessageEvent<string>) {
-        let response: DroplyResponse
+        let parsedMessage: DroplyMessage
         try {
-            response = JSON.parse(message.data)
+            parsedMessage = JSON.parse(message.data)
         } catch (e) {
             return;
         }
@@ -166,8 +176,12 @@ export default class WebsocketHelper extends EventEmitter {
             return;
         }
 
-        console.log("response", response)
-        this.queue[0].callback(response)
-        this.queue.shift()
+        if (parsedMessage.update) {
+            console.log("update", parsedMessage)
+            this.emit(parsedMessage.update.type, parsedMessage.update)
+        } else {
+            console.log("response", parsedMessage)
+            this.queue.shift().callback(parsedMessage)
+        }
     }
 }

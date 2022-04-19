@@ -1,28 +1,17 @@
 import React from "react"
 import Styles from "./SearchPerson.module.scss";
-
-import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
+import {User} from "renderer/repository/UserRepository";
 
 interface Props {
-    name: string
-    avatar: string
-
-    selected: boolean
+    user: User
 }
 
-export function SearchPerson({name, avatar, selected}: Props) {
-    let icon;
-    if (selected) {
-        icon = <span className={BaseHelper.classes(Styles.Selected, Styles.MaterialIcon)}>
-            check_circle
-        </span>
-    }
+export function SearchPerson({user}: Props) {
     return (
         <Person
-            name={name}
-            avatar={avatar}
-            action={icon} 
-            className={Styles.Person} />
+            name={user.name}
+            avatar={user.avatarUrl}
+            className={Styles.Person}/>
     )
 }
