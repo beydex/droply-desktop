@@ -29,7 +29,7 @@ export function FilePerson({name, avatar, size, filesCount, percent}: Props) {
             action={
                 <>
                     <div className={Styles.Percent}>
-                        {percent}
+                        {percent + '%'}
                     </div>
                 </>
             }

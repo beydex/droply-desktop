@@ -18,20 +18,24 @@ export function DownloadPerson({name, avatar, speed, time}: Props) {
             avatar={avatar}
             hint={
                 <div className={BaseHelper.classes(Styles.Hint, Styles.Ellipsis)}>
-                    Speed:&nbsp;
-                    <span className={Styles.HintFiles}>
-                        <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                            south
+                    <div className={Styles.Speed}>
+                        <div>Speed:</div>
+                        <span className={Styles.HintFiles}>
+                            <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
+                                south
+                            </span>
+                            <div>{speed} Mb/S</div>
                         </span>
-                        {speed} Mb/S
-                    </span>
-                    &nbsp;Time:&nbsp;
-                    <span className={Styles.HintFiles}>
-                        <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                            schedule
+                    </div>
+                    <div className={Styles.Time}>
+                        <div> Time: </div>
+                        <span className={Styles.HintFiles}>
+                            <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
+                                schedule
+                            </span>
+                            <div>{time}s</div>
                         </span>
-                        &nbsp;{time}s
-                    </span>
+                    </div>
                 </div>
             }
             className={Styles.Person}

@@ -1,7 +1,8 @@
 @import "~renderer/assets/fonts/icons/style.scss";
+@import "~renderer/styles/colors.scss";
 
 .File {
-    background-color: #a9c9ff;
+    background-color: #EAF2FF;
     border-radius: 15px;
     width: 55px;
     height: 55px;
@@ -13,4 +14,15 @@
 
 .FileIcon {
     color: #2979FF;
+}
+
+.TitleText {
+    font-size: 22px;
+    font-weight: 500;
+}
+
+.Hint {
+    margin-bottom: 20px;
+    font-size: 16px;
+    color: $hint_color;
 }
