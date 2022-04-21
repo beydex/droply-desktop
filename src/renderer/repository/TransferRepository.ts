@@ -54,7 +54,7 @@ export class TransferRepository extends EventEmitter {
         transfer.on(TransferEvent.UPDATE, () => {
             this.emit(TransferRepositoryEvent.UPDATE)
 
-            if (transfer.state == TransferState.DONE) {
+            if ([TransferState.ERROR, TransferState.DONE].includes(transfer.state)) {
                 setTimeout(
                     this.deleteRequest.bind(this),
                     TRANSFER_DELETE_TIMEOUT,
@@ -160,7 +160,9 @@ export class Transfer extends EventEmitter {
                 })
         )
 
-        if (results.find(value => !value)) {
+        console.log("WAITED")
+
+        if (results.includes(false)) {
             this.changeState(TransferState.ERROR)
         } else {
             this.changeState(TransferState.DONE)
@@ -170,6 +172,8 @@ export class Transfer extends EventEmitter {
     private async receive() {
         this.request.peerConnection
             .on(PeerConnectionEvent.DATA_CHANNEL, async (dataChannel: DataChannel) => {
+                this.changeState(TransferState.ACTIVE)
+
                 let result = await dataChannel
                     .receive(data => {
                         console.log("RECEIVED", data.byteLength)
@@ -190,9 +194,13 @@ export class Transfer extends EventEmitter {
     }
 
     private changeState(state: TransferState) {
+        if (this.state == state) {
+            return
+        }
+
         this.state = state
 
-        if (this.state == TransferState.ERROR || this.state == TransferState.DONE) {
+        if ([TransferState.ERROR, TransferState.DONE].includes(this.state)) {
             this.request.peerConnection.close()
         }
 

@@ -64,11 +64,12 @@ export class PeerConnection extends EventEmitter {
 
     public createDataChannel(label: string) {
         this.dataChannels.push(
-            new DataChannel(this.peerConnection.createDataChannel(label))
+            new DataChannel(this.peerConnection, this.peerConnection.createDataChannel(label))
         )
     }
 
     public getDataChannels(): DataChannel[] {
+        console.log(this.peerConnection.getReceivers(), this.peerConnection.getSenders())
         return this.dataChannels
     }
 
@@ -82,12 +83,13 @@ export class PeerConnection extends EventEmitter {
         }
 
         if (!this.emit(PeerConnectionEvent.CANDIDATE, JSON.stringify(event.candidate))) {
+            console.log("candidates")
             this.candidates.push(event.candidate)
         }
     }
 
     private async handleDataChannel(event: RTCDataChannelEvent) {
-        this.emit(PeerConnectionEvent.DATA_CHANNEL, new DataChannel(event.channel))
+        this.emit(PeerConnectionEvent.DATA_CHANNEL, new DataChannel(this.peerConnection, event.channel))
     }
 
     private setHandlers() {
@@ -101,13 +103,18 @@ export class PeerConnection extends EventEmitter {
 
 export class DataChannel {
     public static readonly EOF = "EOF"
-    public static readonly ChunkSize = 1024 * 256
+    public static readonly ChunkSize = 1024 * 64
 
+    private peerConnection: RTCPeerConnection
     private dataChannel: RTCDataChannel
 
-    constructor(dataChannel: RTCDataChannel) {
+    constructor(peerConnection: RTCPeerConnection, dataChannel: RTCDataChannel) {
+        this.peerConnection = peerConnection
+
         this.dataChannel = dataChannel
         this.dataChannel.binaryType = "arraybuffer"
+
+        this.dataChannel.addEventListener("error", console.error)
     }
 
     public label(): string {
@@ -132,12 +139,15 @@ export class DataChannel {
                 this.waitEvent("close")
             ])
 
-            console.log("SENT", (i / file.size * 100).toFixed(2))
+            console.log("SENDING", file.name, (i / file.size * 100).toFixed(2))
 
             if (this.isClosed()) {
+                console.log("CLOSED", file.name)
                 return false
             }
         }
+
+        console.log("SENT", file.name)
 
         this.dataChannel.send(DataChannel.EOF)
         this.dataChannel.close()
@@ -156,11 +166,16 @@ export class DataChannel {
                 return false
             }
 
+            let data = (result as MessageEvent).data
+            if (data == DataChannel.EOF) {
+                return true
+            }
+
             cb((result as MessageEvent).data)
         }
     }
 
-    private isClosed(): boolean {
+    public isClosed(): boolean {
         return this.dataChannel.readyState == "closed"
     }
 
