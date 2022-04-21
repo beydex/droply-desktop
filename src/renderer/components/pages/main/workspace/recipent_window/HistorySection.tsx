@@ -5,7 +5,7 @@ import {FullUser} from "renderer/repository/UserRepository";
 import {Contact, ContactsRepository} from "renderer/repository/ContactsRepository";
 import {HistoryPerson} from "renderer/components/pages/main/person/HistoryPerson";
 import {Loading} from "renderer/components/pages/main/workspace/recipent_window/common/Loading";
-import {TransferRepository} from "renderer/repository/TransferRepository";
+import {RequestRepository} from "renderer/repository/RequestRepository";
 import {FileRepository} from "renderer/repository/FileRepository";
 import {useNavigate} from "react-router-dom";
 
@@ -27,9 +27,9 @@ export function HistorySection() {
     }
 
     async function sendRequest(user: FullUser) {
-        await TransferRepository.Instance.sendRequest(
-            FileRepository.Instance.getFiles(),
-            user
+        await RequestRepository.Instance.sendRequest(
+            user,
+            FileRepository.Instance.getFiles()
         )
 
         navigate("../")

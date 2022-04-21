@@ -5,11 +5,12 @@ import electron from "electron";
 import Application from "main/application/Application";
 import WindowManager from "main/application/WindowManager";
 
-
 const TOKEN_FILE = "token.txt"
 
-const IPC_CHANNEL_READ = "token-storage-read"
-const IPC_CHANNEL_WRITE = "token-storage-write"
+enum IpcEvent {
+    Read = "token-storage:read",
+    Write = "token-storage:write"
+}
 
 export interface TokenStoragePreload {
     readToken: () => Promise<string>;
@@ -21,25 +22,23 @@ export class TokenStorage {
 
     constructor(windowManager: WindowManager) {
         this.windowManager = windowManager
-
-        this.handleReadToken()
-        this.handleWriteToken()
+        this.setHandlers()
     }
 
     public static getPreload(): TokenStoragePreload {
         return {
             async readToken(): Promise<string> {
-                return await electron.ipcRenderer.invoke(IPC_CHANNEL_READ)
+                return await electron.ipcRenderer.invoke(IpcEvent.Read)
             },
 
             async writeToken(token: string): Promise<void> {
-                return await electron.ipcRenderer.invoke(IPC_CHANNEL_WRITE, token)
+                return await electron.ipcRenderer.invoke(IpcEvent.Write, token)
             }
         }
     }
 
-    public handleReadToken() {
-        this.windowManager.handleInvoke(IPC_CHANNEL_READ, () => {
+    private handleReadToken() {
+        this.windowManager.handleInvoke(IpcEvent.Read, () => {
             return new Promise<string>((resolve, reject) => {
                 let tokenFile = path.resolve(Application.Instance.getApp().getPath("userData"), TOKEN_FILE)
 
@@ -57,8 +56,8 @@ export class TokenStorage {
         })
     }
 
-    public handleWriteToken() {
-        this.windowManager.handleInvoke(IPC_CHANNEL_WRITE, (token: string) => {
+    private handleWriteToken() {
+        this.windowManager.handleInvoke(IpcEvent.Write, (token: string) => {
             return new Promise<void>((resolve, reject) => {
                 let tokenFile = path.resolve(Application.Instance.getApp().getPath("userData"), TOKEN_FILE)
 
@@ -74,5 +73,10 @@ export class TokenStorage {
                 fs.writeFile(tokenFile, token, callback)
             })
         })
+    }
+
+    private setHandlers() {
+        this.handleReadToken()
+        this.handleWriteToken()
     }
 }

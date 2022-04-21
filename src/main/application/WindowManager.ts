@@ -15,7 +15,10 @@ export default class WindowManager {
     private static createWindow(): BrowserWindow {
         return new BrowserWindow({
             width: constants.WINDOW_WIDTH,
+            minWidth: constants.WINDOW_WIDTH,
+
             height: constants.WINDOW_HEIGHT,
+            minHeight: constants.WINDOW_HEIGHT,
 
             autoHideMenuBar: true,
 

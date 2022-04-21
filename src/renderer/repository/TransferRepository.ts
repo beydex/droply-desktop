@@ -1,118 +1,36 @@
-import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
-import {FullUser, isFullUser, User, UserRepository} from "renderer/repository/UserRepository";
-import {PeerConnection} from "renderer/helpers/WebRtcHelper";
+import {Request} from "renderer/repository/RequestRepository";
 import {EventEmitter} from "events";
+import {User} from "renderer/repository/UserRepository";
+import {PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
+import {FileDescription} from "renderer/repository/FileRepository";
+import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 
 /**
- * "request/send" method
+ * "request/signal" method
  */
 
-const REQUEST_SEND_PATH = "request/send"
+const REQUEST_SIGNAL_PATH = "request/signal"
 
-interface RequestSendRequest {
-    receiverId?: number
-    receiverUrid?: number
-
-    files: RequestFile[]
-
-    // WebRTC data
-    offer: string
+interface RequestSignalRequest {
+    requestId: number,
+    content: string
 }
 
-interface RequestSendResponse extends DroplyResponse {
-    request: {
-        requestId: number
-    }
+interface RequestSignalResponse extends DroplyResponse {
 }
 
 /**
- * "request/answer" method
+ * "REQUEST_SIGNAL" update
  */
 
-const REQUEST_ANSWER_PATH = "request/answer"
+const REQUEST_SIGNAL_UPDATE_TYPE = "REQUEST_SIGNAL"
 
-interface RequestAnswerRequest {
-    requestId: number
-    accept: boolean
-
-    // WebRTC data
-    answer?: string
-}
-
-interface RequestAnswerResponse extends DroplyResponse {
-    resolution: boolean
-}
-
-/**
- * "request/cancel" method
- */
-
-const REQUEST_CANCEL_PATH = "request/cancel"
-
-interface RequestCancelRequest {
-    requestId: number
-}
-
-interface RequestCancelResponse extends DroplyResponse {
-}
-
-/**
- * "REQUEST_RECEIVED" update
- */
-
-const REQUEST_RECEIVED_UPDATE_TYPE = "REQUEST_RECEIVED"
-
-interface RequestReceivedContent {
+interface RequestSignalContent {
     requestId: number,
 
-    sender: User,
-    receiver: User
-
-    files: RequestFile[]
-
     // WebRTC data
-    offer: string
-}
-
-/**
- * "REQUEST_ANSWERED" update
- */
-
-const REQUEST_ANSWERED_UPDATE_TYPE = "REQUEST_ANSWERED"
-
-interface RequestAnsweredContent {
-    requestId: number,
-    accept: boolean,
-
-    // WebRTC data
-    answer?: string
-}
-
-interface RequestFile {
-    name: string,
-    size: number
-}
-
-export interface Transfer {
-    outgoing: boolean
-    state: TransferState
-
-    requestId: number
-
-    sender: User
-    receiver: User
-
-    files: RequestFile[] | File[]
-
-    // WebRTC
-    peerConnection: PeerConnection
-}
-
-export enum TransferState {
-    REQUESTED,
-    ANSWERED,
-    ACTIVE
+    content: string
 }
 
 export enum TransferRepositoryEvent {
@@ -120,185 +38,115 @@ export enum TransferRepositoryEvent {
 }
 
 export class TransferRepository extends EventEmitter {
-    public static Instance = new TransferRepository();
+    public static Instance = new TransferRepository()
 
-    private transfers: { [requestId: string]: Transfer } = {}
+    private transfers: { [id: string]: Transfer } = {}
 
     constructor() {
-        super()
+        super();
         this.setHandlers()
     }
 
-
-    public async sendRequest(files: File[], user: User | FullUser): Promise<Transfer> {
-        await AuthRepository.Instance.waitAuth()
-
-        let peerConnection = new PeerConnection()
-        let offer = await peerConnection.getOffer()
-
-        let parsedFiles = files.map(file => (<RequestFile>{
-            name: file.name,
-            size: file.size
-        }))
-
-        let response: RequestSendResponse
-
-        if (isFullUser(user)) {
-            response = await WebsocketHelper.Instance
-                .request<RequestSendRequest, RequestSendResponse>({
-                    path: REQUEST_SEND_PATH,
-                    request: {
-                        receiverId: user.id,
-                        files: parsedFiles,
-                        offer
-                    }
-                })
-        } else {
-            response = await WebsocketHelper.Instance
-                .request<RequestSendRequest, RequestSendResponse>({
-                    path: REQUEST_SEND_PATH,
-                    request: {
-                        receiverUrid: user.urid,
-                        files: parsedFiles,
-                        offer
-                    }
-                })
-        }
-
-        if (response.success) {
-            this.transfers[response.request.requestId] = {
-                outgoing: true,
-                state: TransferState.REQUESTED,
-
-                requestId: response.request.requestId,
-
-                sender: await UserRepository.Instance.getUser(),
-                receiver: user,
-
-                files,
-                peerConnection
-            }
-
-            // Sending update only in response successful
-            this.emit(TransferRepositoryEvent.UPDATE)
-
-            return this.transfers[response.request.requestId]
-        }
-
-        return null
+    public createTransfer(request: Request) {
+        this.addTransfer(new Transfer(request))
     }
 
-    public async answerRequest(requestId: number, accept: boolean): Promise<boolean> {
-        await AuthRepository.Instance.waitAuth()
-
-        let transfer = this.transfers[requestId]
-        if (transfer == null || transfer.outgoing || transfer.state != TransferState.REQUESTED) {
-            return false;
-        }
-
-        let request: RequestAnswerRequest = {
-            requestId: transfer.requestId,
-            accept,
-        }
-
-        if (accept) {
-            request.answer = await transfer.peerConnection.getAnswer()
-        }
-
-        let response = await WebsocketHelper.Instance
-            .request<RequestAnswerRequest, RequestAnswerResponse>({
-                path: REQUEST_ANSWER_PATH,
-                request
-            })
-
-        if (response.success && response.resolution) {
-            transfer.state = TransferState.ANSWERED
-        } else {
-            // Request no longer valid
-            delete this.transfers[transfer.requestId]
-        }
-
-        this.emit(TransferRepositoryEvent.UPDATE)
-        return response.success
+    public list(): Transfer[] {
+        return Object.values(this.transfers)
     }
 
-    public async cancelRequest(requestId: number): Promise<boolean> {
-        await AuthRepository.Instance.waitAuth()
-
-        let transfer = this.transfers[requestId]
-        if (transfer == null || transfer.state != TransferState.REQUESTED) {
-            return false;
+    private async handleSignaling(update: DroplyUpdate<RequestSignalContent>) {
+        let transfer = this.getTransfer(update.content.requestId)
+        if (transfer == null) {
+            return
         }
 
-        let response = await WebsocketHelper.Instance
-            .request<RequestCancelRequest, RequestCancelResponse>({
-                path: REQUEST_CANCEL_PATH,
-                request: {requestId}
-            })
-
-        if (response.success) {
-            delete this.transfers[requestId]
-
-            this.emit(TransferRepositoryEvent.UPDATE)
-        }
-
-        return response.success
+        await transfer.addCandidate(update.content.content)
     }
 
-    public listTransfers(state: TransferState | TransferState[]): Transfer[] {
-        return Object
-            .values(this.transfers)
-            .filter(transfer => (state instanceof Array) ? state.includes(transfer.state) : transfer.state == state)
-    }
+    private addTransfer(transfer: Transfer) {
+        this.transfers[transfer.id] = transfer
 
-    private async handleRequest(update: DroplyUpdate<RequestReceivedContent>) {
-        let peerConnection = new PeerConnection()
-        await peerConnection.setOffer(update.content.offer)
-
-        console.log(update)
-
-        this.transfers[update.content.requestId.toString()] = {
-            outgoing: false,
-            state: TransferState.REQUESTED,
-
-            requestId: update.content.requestId,
-
-            sender: update.content.sender,
-            receiver: update.content.receiver,
-
-            files: update.content.files,
-            peerConnection: peerConnection
-        }
-
+        // Request map updated
         this.emit(TransferRepositoryEvent.UPDATE)
     }
 
-    private async handleAnswer(update: DroplyUpdate<RequestAnsweredContent>) {
-        let transfer = this.transfers[update.content.requestId]
-        if (transfer == null || transfer.state != TransferState.REQUESTED) {
-            return;
-        }
+    private getTransfer(id: number): Transfer {
+        let transfer = this.transfers[id]
 
-        if (update.content.accept) {
-            transfer.state = TransferState.ANSWERED
-            await transfer.peerConnection.setAnswer(update.content.answer)
-        } else {
-            // Request no longer valid
-            delete this.transfers[transfer.requestId]
-        }
-
-        this.emit(TransferRepositoryEvent.UPDATE)
+        return transfer ? transfer : null
     }
 
     private setHandlers() {
         WebsocketHelper.Instance.on(
-            REQUEST_RECEIVED_UPDATE_TYPE,
-            this.handleRequest.bind(this)
-        )
-
-        WebsocketHelper.Instance.on(
-            REQUEST_ANSWERED_UPDATE_TYPE,
-            this.handleAnswer.bind(this)
+            REQUEST_SIGNAL_UPDATE_TYPE,
+            this.handleSignaling.bind(this)
         )
     }
 }
+
+export class Transfer {
+    public id: number
+    public outgoing: boolean
+
+    public sender: User
+    public receiver: User
+
+    public files: File[] | FileDescription[]
+
+    // WebRTC
+    private peerConnection: PeerConnection
+
+    constructor(request: Request) {
+        this.id = request.id
+        this.outgoing = request.outgoing
+
+        this.sender = request.sender
+        this.receiver = request.receiver
+
+        this.files = request.files
+        this.peerConnection = request.peerConnection
+
+        this.setHandlers()
+
+        // Starting transfer
+        if (this.outgoing) {
+            this.startTransfer().then()
+        }
+    }
+
+    public async addCandidate(candidate: string) {
+        await this.peerConnection.addCandidate(candidate)
+    }
+
+    private async startTransfer() {
+    }
+
+    private async handleCandidate(candidate: string): Promise<boolean> {
+        await AuthRepository.Instance.waitAuth()
+        console.log("CANDIDATE SENDING")
+
+        let response = await WebsocketHelper.Instance
+            .request<RequestSignalRequest, RequestSignalResponse>({
+                path: REQUEST_SIGNAL_PATH,
+                request: {
+                    requestId: this.id,
+                    content: candidate
+                }
+            })
+
+        return response.success
+    }
+
+    private setHandlers() {
+        this.peerConnection.on(
+            PeerConnectionEvent.CANDIDATE,
+            this.handleCandidate.bind(this)
+        )
+
+        this.peerConnection
+            .getCandidates()
+            .forEach(this.handleCandidate.bind(this))
+    }
+}
+

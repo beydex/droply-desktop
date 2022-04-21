@@ -87,7 +87,7 @@ export default class WebsocketHelper extends EventEmitter {
             });
 
             this.emit(WebsocketHelperEvent.REQUEST)
-            console.log("request", request)
+            console.log("request", JSON.stringify(request, null, 2))
         })
     }
 
@@ -173,7 +173,7 @@ export default class WebsocketHelper extends EventEmitter {
         }
 
         if (parsedMessage.update) {
-            console.log("update", parsedMessage)
+            console.log("update", JSON.stringify(parsedMessage, null, 2))
             this.emit(parsedMessage.update.type, parsedMessage.update)
             return;
         }
@@ -182,7 +182,7 @@ export default class WebsocketHelper extends EventEmitter {
             return;
         }
 
-        console.log("response", parsedMessage)
+        console.log("response", JSON.stringify(parsedMessage, null, 2))
         this.queue.shift().callback(parsedMessage)
     }
 }

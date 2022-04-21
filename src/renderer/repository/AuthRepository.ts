@@ -66,6 +66,24 @@ export class AuthRepository extends EventEmitter {
         })
     }
 
+    public async authByGoogle(googleToken: string): Promise<boolean> {
+        if (this.authenticated) {
+            return true
+        }
+
+        let response = await WebsocketHelper.Instance
+            .request<AuthGoogleRequest, AuthGoogleResponse>({
+                path: AUTH_GOOGLE_PATH,
+                request: {token: googleToken}
+            })
+
+        if (response.success) {
+            await this.finishAuth(response.token)
+        }
+
+        return response.success
+    }
+
     private async authByToken(): Promise<boolean> {
         if (this.authenticated) {
             return true
@@ -89,24 +107,6 @@ export class AuthRepository extends EventEmitter {
         return response.success
     }
 
-    public async authByGoogle(googleToken: string): Promise<boolean> {
-        if (this.authenticated) {
-            return true
-        }
-
-        let response = await WebsocketHelper.Instance
-            .request<AuthGoogleRequest, AuthGoogleResponse>({
-                path: AUTH_GOOGLE_PATH,
-                request: {token: googleToken}
-            })
-
-        if (response.success) {
-            await this.finishAuth(response.token)
-        }
-
-        return response.success
-    }
-
     public async logout(): Promise<boolean> {
         if (!this.authenticated) {
             return true
@@ -125,19 +125,6 @@ export class AuthRepository extends EventEmitter {
         return response.success
     }
 
-    private setHandlers() {
-        WebsocketHelper.Instance.on(WebsocketHelperEvent.OPEN, async () => {
-            let result = await this.authByToken()
-            if (!result) {
-                this.emit(AuthRepositoryEvent.LOGOUT)
-            }
-        })
-
-        WebsocketHelper.Instance.on(WebsocketHelperEvent.CLOSE, () => {
-            this.authenticated = false
-        })
-    }
-
     private async finishAuth(token: string) {
         await AuthRepository.writeToken(token)
 
@@ -154,6 +141,20 @@ export class AuthRepository extends EventEmitter {
         this.token = ""
 
         this.emit(AuthRepositoryEvent.LOGOUT)
+    }
+
+    private setHandlers() {
+        WebsocketHelper.Instance.on(WebsocketHelperEvent.OPEN, async () => {
+            if (await this.authByToken()) {
+                this.emit(AuthRepositoryEvent.AUTH)
+            } else {
+                this.emit(AuthRepositoryEvent.LOGOUT)
+            }
+        })
+
+        WebsocketHelper.Instance.on(WebsocketHelperEvent.CLOSE, () => {
+            this.authenticated = false
+        })
     }
 
     private static async readToken(): Promise<string> {

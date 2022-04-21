@@ -1,3 +1,8 @@
+export interface FileDescription {
+    name: string
+    size: number
+}
+
 export class FileRepository {
     public static Instance = new FileRepository()
 

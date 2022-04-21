@@ -1,37 +1,32 @@
 import {Card} from './common/Card';
 import React, {useEffect, useState} from 'react';
 import {RequestPerson} from "renderer/components/pages/main/person/RequestPerson";
-import {
-    Transfer,
-    TransferRepository,
-    TransferRepositoryEvent,
-    TransferState
-} from "renderer/repository/TransferRepository";
+import {Request, RequestRepository, RequestRepositoryEvent} from "renderer/repository/RequestRepository";
 import {Empty} from "renderer/components/pages/main/sidebar/common/Empty";
 
 export function RequestsCard() {
-    let [transfers, setTransfers] = useState<Transfer[]>([])
+    let [requests, setRequests] = useState<Request[]>([])
 
     useEffect(() => {
-        TransferRepository.Instance.on(TransferRepositoryEvent.UPDATE, listTransfers)
+        RequestRepository.Instance.on(RequestRepositoryEvent.UPDATE, list)
 
         // Running first time
-        listTransfers().then()
+        list().then()
     }, [])
 
-    async function listTransfers() {
-        setTransfers(TransferRepository.Instance.listTransfers(TransferState.REQUESTED))
+    async function list() {
+        setRequests(RequestRepository.Instance.list())
     }
 
-    async function onAccept(transfer: Transfer) {
-        await TransferRepository.Instance.answerRequest(transfer.requestId, true)
+    async function onAccept(request: Request) {
+        await RequestRepository.Instance.answerRequest(request.id, true)
     }
 
-    async function onCancel(transfer: Transfer) {
-        if (transfer.outgoing) {
-            await TransferRepository.Instance.cancelRequest(transfer.requestId)
+    async function onCancel(request: Request) {
+        if (request.outgoing) {
+            await RequestRepository.Instance.cancelRequest(request.id)
         } else {
-            await TransferRepository.Instance.answerRequest(transfer.requestId, false)
+            await RequestRepository.Instance.answerRequest(request.id, false)
         }
     }
 
@@ -41,10 +36,10 @@ export function RequestsCard() {
             description="Pending file transfer requests"
         >
             {
-                transfers.length > 0
-                    ? transfers.map(transfer =>
-                        <RequestPerson key={transfer.requestId}
-                                       transfer={transfer}
+                requests.length > 0
+                    ? requests.map(request =>
+                        <RequestPerson key={request.id}
+                                       request={request}
                                        onAccept={onAccept}
                                        onCancel={onCancel}/>
                     )

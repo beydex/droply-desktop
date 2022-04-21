@@ -5,7 +5,9 @@ import WindowManager from "main/application/WindowManager";
 const AUTH_URL = "https://auth.droply.ru/google"
 const DEEPLINK_EVENT = "google"
 
-const IPC_CHANNEL = "google-auth"
+enum IpcEvent {
+    Token = "google-auth:token"
+}
 
 export interface GoogleAuthPreload {
     openBrowser: () => Promise<void>
@@ -30,7 +32,7 @@ export class GoogleAuth {
             },
 
             onToken(callback: (token: string) => void) {
-                electron.ipcRenderer.on(IPC_CHANNEL, (event, token) => {
+                electron.ipcRenderer.on(IpcEvent.Token, (event, token) => {
                     callback(token)
                 })
             }
@@ -39,7 +41,7 @@ export class GoogleAuth {
 
     public handleDeeplink() {
         this.deeplinkManager.on(DEEPLINK_EVENT, async token => {
-            await this.windowManager.send(IPC_CHANNEL, token)
+            await this.windowManager.send(IpcEvent.Token, token)
         })
     }
 }

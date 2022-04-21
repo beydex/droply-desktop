@@ -3,17 +3,17 @@ import Styles from "./RequestPerson.module.scss";
 
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
-import {Transfer} from "renderer/repository/TransferRepository";
+import {Request} from "renderer/repository/RequestRepository";
 
 interface Props {
-    transfer: Transfer
+    request: Request
 
-    onAccept?: (transfer: Transfer) => void
-    onCancel?: (transfer: Transfer) => void
+    onAccept?: (transfer: Request) => void
+    onCancel?: (transfer: Request) => void
 }
 
-export function RequestPerson({transfer, onAccept, onCancel}: Props) {
-    let user = transfer.outgoing ? transfer.receiver : transfer.sender
+export function RequestPerson({request, onAccept, onCancel}: Props) {
+    let user = request.outgoing ? request.receiver : request.sender
 
     return (
         <Person
@@ -23,12 +23,12 @@ export function RequestPerson({transfer, onAccept, onCancel}: Props) {
             hint={
                 <div className={BaseHelper.classes(Styles.Hint, Styles.Ellipsis)}>
                     <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                        {transfer.outgoing ? "north" : "south"}
+                        {request.outgoing ? "north" : "south"}
                     </span>
 
-                    &nbsp;{transfer.outgoing ? "Sending" : "Receiving"}&nbsp;
+                    &nbsp;{request.outgoing ? "Sending" : "Receiving"}&nbsp;
                     <span className={Styles.HintFiles}>
-                        {transfer.files.length} file(s)
+                        {request.files.length} file(s)
                     </span>
                 </div>
             }
@@ -36,18 +36,18 @@ export function RequestPerson({transfer, onAccept, onCancel}: Props) {
             action={
                 <>
                     {
-                        transfer.outgoing
+                        request.outgoing
                             ? <></>
                             : (
                                 <span className={BaseHelper.classes(Styles.AcceptIcon, Styles.MaterialIcon)}
-                                      onClick={() => onAccept?.(transfer)}>
+                                      onClick={() => onAccept?.(request)}>
                                     done
                                 </span>
                             )
                     }
 
                     <span className={BaseHelper.classes(Styles.RejectIcon, Styles.MaterialIcon)}
-                          onClick={() => onCancel?.(transfer)}>
+                          onClick={() => onCancel?.(request)}>
                         close
                     </span>
                 </>
