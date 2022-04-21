@@ -183,12 +183,14 @@ export class RequestRepository extends EventEmitter {
                 }
             })
 
+
         if (response.success && accept) {
-            // Creating transfer once request was accepted
-            await TransferRepository.Instance.createTransfer(request)
+            TransferRepository.Instance.createTransfer(request).then()
         }
 
+        // Request must be deleted anyway on answer
         this.deleteRequest(id)
+
         return response.success
     }
 
@@ -241,13 +243,14 @@ export class RequestRepository extends EventEmitter {
             return;
         }
 
+
         if (update.content.accept) {
             await request.peerConnection.setAnswer(update.content.answer)
 
-            // Creating transfer once request was successfully accepted
-            await TransferRepository.Instance.createTransfer(request)
+            TransferRepository.Instance.createTransfer(request).then()
         }
 
+        // Request must be deleted anyway on answer
         this.deleteRequest(request.id)
     }
 
@@ -272,14 +275,10 @@ export class RequestRepository extends EventEmitter {
     }
 
     private setHandlers() {
-        WebsocketHelper.Instance.on(
-            REQUEST_RECEIVED_UPDATE_TYPE,
-            this.handleRequest.bind(this)
-        )
+        WebsocketHelper.Instance
+            .on(REQUEST_RECEIVED_UPDATE_TYPE, this.handleRequest.bind(this))
 
-        WebsocketHelper.Instance.on(
-            REQUEST_ANSWERED_UPDATE_TYPE,
-            this.handleAnswer.bind(this)
-        )
+        WebsocketHelper.Instance
+            .on(REQUEST_ANSWERED_UPDATE_TYPE, this.handleAnswer.bind(this))
     }
 }

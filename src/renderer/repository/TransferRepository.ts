@@ -1,6 +1,6 @@
 import {Request, RequestRepositoryEvent} from "renderer/repository/RequestRepository";
 import {EventEmitter} from "events";
-import {PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
+import {DataChannel, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
 import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 
@@ -100,14 +100,10 @@ export class TransferRepository extends EventEmitter {
     }
 
     private setHandlers() {
-        WebsocketHelper.Instance.on(
-            REQUEST_SIGNAL_UPDATE_TYPE,
-            this.handleSignaling.bind(this)
-        )
+        WebsocketHelper.Instance
+            .on(REQUEST_SIGNAL_UPDATE_TYPE, this.handleSignaling.bind(this))
     }
 }
-
-const CHUNK_SIZE = 1000
 
 export enum TransferEvent {
     UPDATE = "update"
@@ -116,17 +112,16 @@ export enum TransferEvent {
 export enum TransferState {
     EXCHANGING,
     ACTIVE,
+    ERROR,
     DONE
 }
 
 export class Transfer extends EventEmitter {
     public request: Request
 
-    // Transfer state
     public state = TransferState.EXCHANGING
 
-    // Files that finished transferring
-    private finishCount = 0
+    private receivedFiles = 0
 
     constructor(request: Request) {
         super()
@@ -148,67 +143,60 @@ export class Transfer extends EventEmitter {
     }
 
     private async send() {
-        // All data channels created during sending
-
-        this.request.peerConnection
-            .getDataChannels()
-            .forEach((dataChannel, index) => {
-                dataChannel.addEventListener("open", () => {
-                    this.sendFile(this.request.files[index] as File, dataChannel)
-                })
-            })
-    }
-
-    private async sendFile(file: File, dataChannel: RTCDataChannel) {
-        this.changeState(TransferState.ACTIVE)
-
-        for (let i = 0; i < file.size;) {
-            let chunk = await file.slice(i, i + CHUNK_SIZE).arrayBuffer()
-            dataChannel.send(chunk)
-
-            i += chunk.byteLength
-        }
-
-        dataChannel.close()
-        this.finishFileTransfer()
-    }
-
-    private async receive() {
-        // Not all channels could be created on that stage
-
-        this.request.peerConnection.on(
-            PeerConnectionEvent.DATA_CHANNEL,
-            this.receiveFile.bind(this)
+        // Waiting all channels are open
+        await Promise.all(
+            this.request.peerConnection
+                .getDataChannels()
+                .map(dataChannel => dataChannel.waitOpen())
         )
 
-        this.request.peerConnection
-            .getDataChannels()
-            .forEach(this.receiveFile)
-    }
+        this.changeState(TransferState.ACTIVE)
 
-    private async receiveFile(dataChannel: RTCDataChannel) {
-        dataChannel.addEventListener("message", message => {
-            console.error("Message received:", message.data.toString())
-        })
+        let results = await Promise.all(
+            this.request.peerConnection
+                .getDataChannels()
+                .map((dataChannel, index) => {
+                    return dataChannel.send(this.request.files[index] as File)
+                })
+        )
 
-        dataChannel.addEventListener("close", () => {
-            this.finishFileTransfer()
-        })
-    }
-
-    private finishFileTransfer() {
-        this.finishCount += 1
-
-        if (this.finishCount == this.request.files.length) {
+        if (results.find(value => !value)) {
+            this.changeState(TransferState.ERROR)
+        } else {
             this.changeState(TransferState.DONE)
         }
     }
 
+    private async receive() {
+        this.request.peerConnection
+            .on(PeerConnectionEvent.DATA_CHANNEL, async (dataChannel: DataChannel) => {
+                let result = await dataChannel
+                    .receive(data => {
+                        console.log("RECEIVED", data.byteLength)
+                    })
+
+                if (result) {
+                    this.receivedFiles += 1
+                } else {
+                    this.changeState(TransferState.ERROR)
+                    return
+                }
+
+                if (this.receivedFiles == this.request.files.length) {
+                    // ALl files received
+                    this.changeState(TransferState.DONE)
+                }
+            })
+    }
+
     private changeState(state: TransferState) {
-        if (this.state != state) {
-            this.state = state
-            this.emit(TransferEvent.UPDATE)
+        this.state = state
+
+        if (this.state == TransferState.ERROR || this.state == TransferState.DONE) {
+            this.request.peerConnection.close()
         }
+
+        this.emit(TransferEvent.UPDATE)
     }
 
     private async handleCandidate(candidate: string): Promise<boolean> {
@@ -227,11 +215,10 @@ export class Transfer extends EventEmitter {
     }
 
     private setHandlers() {
-        this.request.peerConnection.on(
-            PeerConnectionEvent.CANDIDATE,
-            this.handleCandidate.bind(this)
-        )
+        this.request.peerConnection
+            .on(PeerConnectionEvent.CANDIDATE, this.handleCandidate.bind(this))
 
+        // Sending cached candidates
         this.request.peerConnection
             .getCandidates()
             .forEach(this.handleCandidate.bind(this))

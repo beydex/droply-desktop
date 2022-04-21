@@ -13,7 +13,7 @@ export class PeerConnection extends EventEmitter {
     )
 
     private candidates: RTCIceCandidate[] = []
-    private dataChannels: RTCDataChannel[] = []
+    private dataChannels: DataChannel[] = []
 
     constructor() {
         super()
@@ -63,11 +63,17 @@ export class PeerConnection extends EventEmitter {
     }
 
     public createDataChannel(label: string) {
-        this.dataChannels.push(this.peerConnection.createDataChannel(label))
+        this.dataChannels.push(
+            new DataChannel(this.peerConnection.createDataChannel(label))
+        )
     }
 
-    public getDataChannels(): RTCDataChannel[] {
+    public getDataChannels(): DataChannel[] {
         return this.dataChannels
+    }
+
+    public close() {
+        this.peerConnection.close()
     }
 
     private async handleIceCandidate(event: RTCPeerConnectionIceEvent) {
@@ -81,24 +87,86 @@ export class PeerConnection extends EventEmitter {
     }
 
     private async handleDataChannel(event: RTCDataChannelEvent) {
-        if (event.channel == null) {
-            return
-        }
-
-        if (!this.emit(PeerConnectionEvent.DATA_CHANNEL, event.channel)) {
-            this.dataChannels.push(event.channel)
-        }
+        this.emit(PeerConnectionEvent.DATA_CHANNEL, new DataChannel(event.channel))
     }
 
     private setHandlers() {
-        this.peerConnection.addEventListener(
-            "icecandidate",
-            this.handleIceCandidate.bind(this)
-        )
+        this.peerConnection
+            .addEventListener("icecandidate", this.handleIceCandidate.bind(this))
 
-        this.peerConnection.addEventListener(
-            "datachannel",
-            this.handleDataChannel.bind(this)
-        )
+        this.peerConnection
+            .addEventListener("datachannel", this.handleDataChannel.bind(this))
+    }
+}
+
+export class DataChannel {
+    public static readonly EOF = "EOF"
+    public static readonly ChunkSize = 1024 * 256
+
+    private dataChannel: RTCDataChannel
+
+    constructor(dataChannel: RTCDataChannel) {
+        this.dataChannel = dataChannel
+        this.dataChannel.binaryType = "arraybuffer"
+    }
+
+    public label(): string {
+        return this.dataChannel.label
+    }
+
+    public async waitOpen() {
+        await this.waitEvent("open")
+    }
+
+    public async send(file: File): Promise<boolean> {
+        for (let i = 0; i < file.size;) {
+            let chunk = await file
+                .slice(i, i + DataChannel.ChunkSize)
+                .arrayBuffer()
+
+            this.dataChannel.send(chunk)
+            i += chunk.byteLength
+
+            await Promise.race([
+                this.waitEvent("bufferedamountlow"),
+                this.waitEvent("close")
+            ])
+
+            console.log("SENT", (i / file.size * 100).toFixed(2))
+
+            if (this.isClosed()) {
+                return false
+            }
+        }
+
+        this.dataChannel.send(DataChannel.EOF)
+        this.dataChannel.close()
+
+        return true
+    }
+
+    public async receive(cb: (data: ArrayBuffer) => void): Promise<boolean> {
+        while (true) {
+            let result = await Promise.race([
+                this.waitEvent("message"),
+                this.waitEvent("close")
+            ])
+
+            if (this.isClosed()) {
+                return false
+            }
+
+            cb((result as MessageEvent).data)
+        }
+    }
+
+    private isClosed(): boolean {
+        return this.dataChannel.readyState == "closed"
+    }
+
+    private async waitEvent<T extends keyof RTCDataChannelEventMap>(event: T): Promise<RTCDataChannelEventMap[T]> {
+        return new Promise<RTCDataChannelEventMap[T]>((resolve => {
+            this.dataChannel.addEventListener(event, resolve, {once: true})
+        }))
     }
 }
