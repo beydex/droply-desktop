@@ -185,7 +185,7 @@ export class RequestRepository extends EventEmitter {
 
         if (response.success && accept) {
             // Creating transfer once request was accepted
-            TransferRepository.Instance.createTransfer(request)
+            await TransferRepository.Instance.createTransfer(request)
         }
 
         this.deleteRequest(id)

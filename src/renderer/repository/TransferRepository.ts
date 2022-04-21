@@ -107,7 +107,7 @@ export class TransferRepository extends EventEmitter {
     }
 }
 
-const CHUNK_SIZE = 65536
+const CHUNK_SIZE = 1000
 
 export enum TransferEvent {
     UPDATE = "update"
@@ -188,7 +188,7 @@ export class Transfer extends EventEmitter {
 
     private async receiveFile(dataChannel: RTCDataChannel) {
         dataChannel.addEventListener("message", message => {
-            console.log("Message received:", message.data.toString())
+            console.error("Message received:", message.data.toString())
         })
 
         dataChannel.addEventListener("close", () => {

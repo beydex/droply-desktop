@@ -71,7 +71,7 @@ export class PeerConnection extends EventEmitter {
     }
 
     private async handleIceCandidate(event: RTCPeerConnectionIceEvent) {
-        if (event.candidate == null) {
+        if (event.candidate == null || event.candidate.candidate == null) {
             return
         }
 
@@ -85,7 +85,7 @@ export class PeerConnection extends EventEmitter {
             return
         }
 
-        if (!this.emit(PeerConnectionEvent.CANDIDATE, JSON.stringify(event.channel))) {
+        if (!this.emit(PeerConnectionEvent.DATA_CHANNEL, event.channel)) {
             this.dataChannels.push(event.channel)
         }
     }
