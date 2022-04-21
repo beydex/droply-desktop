@@ -1,8 +1,6 @@
-import {Request} from "renderer/repository/RequestRepository";
+import {Request, RequestRepositoryEvent} from "renderer/repository/RequestRepository";
 import {EventEmitter} from "events";
-import {User} from "renderer/repository/UserRepository";
-import {PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
-import {FileDescription} from "renderer/repository/FileRepository";
+import {PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
 import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 
@@ -33,6 +31,8 @@ interface RequestSignalContent {
     content: string
 }
 
+const TRANSFER_DELETE_TIMEOUT = 2000
+
 export enum TransferRepositoryEvent {
     UPDATE = "update"
 }
@@ -47,8 +47,23 @@ export class TransferRepository extends EventEmitter {
         this.setHandlers()
     }
 
-    public createTransfer(request: Request) {
-        this.addTransfer(new Transfer(request))
+    public async createTransfer(request: Request) {
+        let transfer = new Transfer(request)
+        this.addTransfer(transfer)
+
+        transfer.on(TransferEvent.UPDATE, () => {
+            this.emit(TransferRepositoryEvent.UPDATE)
+
+            if (transfer.state == TransferState.DONE) {
+                setTimeout(
+                    this.deleteRequest.bind(this),
+                    TRANSFER_DELETE_TIMEOUT,
+                    transfer.request.id
+                )
+            }
+        })
+
+        await transfer.process()
     }
 
     public list(): Transfer[] {
@@ -65,16 +80,23 @@ export class TransferRepository extends EventEmitter {
     }
 
     private addTransfer(transfer: Transfer) {
-        this.transfers[transfer.id] = transfer
+        this.transfers[transfer.request.id] = transfer
 
-        // Request map updated
+        // Transfer map updated
         this.emit(TransferRepositoryEvent.UPDATE)
     }
 
-    private getTransfer(id: number): Transfer {
-        let transfer = this.transfers[id]
+    private getTransfer(requestId: number): Transfer {
+        let transfer = this.transfers[requestId]
 
         return transfer ? transfer : null
+    }
+
+    private deleteRequest(requestId: number) {
+        delete this.transfers[requestId]
+
+        // Transfer map updated
+        this.emit(RequestRepositoryEvent.UPDATE)
     }
 
     private setHandlers() {
@@ -85,52 +107,118 @@ export class TransferRepository extends EventEmitter {
     }
 }
 
-export class Transfer {
-    public id: number
-    public outgoing: boolean
+const CHUNK_SIZE = 65536
 
-    public sender: User
-    public receiver: User
+export enum TransferEvent {
+    UPDATE = "update"
+}
 
-    public files: File[] | FileDescription[]
+export enum TransferState {
+    EXCHANGING,
+    ACTIVE,
+    DONE
+}
 
-    // WebRTC
-    private peerConnection: PeerConnection
+export class Transfer extends EventEmitter {
+    public request: Request
+
+    // Transfer state
+    public state = TransferState.EXCHANGING
+
+    // Files that finished transferring
+    private finishCount = 0
 
     constructor(request: Request) {
-        this.id = request.id
-        this.outgoing = request.outgoing
-
-        this.sender = request.sender
-        this.receiver = request.receiver
-
-        this.files = request.files
-        this.peerConnection = request.peerConnection
+        super()
+        this.request = request
 
         this.setHandlers()
-
-        // Starting transfer
-        if (this.outgoing) {
-            this.startTransfer().then()
-        }
     }
 
     public async addCandidate(candidate: string) {
-        await this.peerConnection.addCandidate(candidate)
+        await this.request.peerConnection.addCandidate(candidate)
     }
 
-    private async startTransfer() {
+    public async process() {
+        if (this.request.outgoing) {
+            await this.send()
+        } else {
+            await this.receive()
+        }
+    }
+
+    private async send() {
+        // All data channels created during sending
+
+        this.request.peerConnection
+            .getDataChannels()
+            .forEach((dataChannel, index) => {
+                dataChannel.addEventListener("open", () => {
+                    this.sendFile(this.request.files[index] as File, dataChannel)
+                })
+            })
+    }
+
+    private async sendFile(file: File, dataChannel: RTCDataChannel) {
+        this.changeState(TransferState.ACTIVE)
+
+        for (let i = 0; i < file.size;) {
+            let chunk = await file.slice(i, i + CHUNK_SIZE).arrayBuffer()
+            dataChannel.send(chunk)
+
+            i += chunk.byteLength
+        }
+
+        dataChannel.close()
+        this.finishFileTransfer()
+    }
+
+    private async receive() {
+        // Not all channels could be created on that stage
+
+        this.request.peerConnection.on(
+            PeerConnectionEvent.DATA_CHANNEL,
+            this.receiveFile.bind(this)
+        )
+
+        this.request.peerConnection
+            .getDataChannels()
+            .forEach(this.receiveFile)
+    }
+
+    private async receiveFile(dataChannel: RTCDataChannel) {
+        dataChannel.addEventListener("message", message => {
+            console.log("Message received:", message.data.toString())
+        })
+
+        dataChannel.addEventListener("close", () => {
+            this.finishFileTransfer()
+        })
+    }
+
+    private finishFileTransfer() {
+        this.finishCount += 1
+
+        if (this.finishCount == this.request.files.length) {
+            this.changeState(TransferState.DONE)
+        }
+    }
+
+    private changeState(state: TransferState) {
+        if (this.state != state) {
+            this.state = state
+            this.emit(TransferEvent.UPDATE)
+        }
     }
 
     private async handleCandidate(candidate: string): Promise<boolean> {
         await AuthRepository.Instance.waitAuth()
-        console.log("CANDIDATE SENDING")
 
         let response = await WebsocketHelper.Instance
             .request<RequestSignalRequest, RequestSignalResponse>({
                 path: REQUEST_SIGNAL_PATH,
                 request: {
-                    requestId: this.id,
+                    requestId: this.request.id,
                     content: candidate
                 }
             })
@@ -139,12 +227,12 @@ export class Transfer {
     }
 
     private setHandlers() {
-        this.peerConnection.on(
+        this.request.peerConnection.on(
             PeerConnectionEvent.CANDIDATE,
             this.handleCandidate.bind(this)
         )
 
-        this.peerConnection
+        this.request.peerConnection
             .getCandidates()
             .forEach(this.handleCandidate.bind(this))
     }

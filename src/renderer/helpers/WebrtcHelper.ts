@@ -80,6 +80,16 @@ export class PeerConnection extends EventEmitter {
         }
     }
 
+    private async handleDataChannel(event: RTCDataChannelEvent) {
+        if (event.channel == null) {
+            return
+        }
+
+        if (!this.emit(PeerConnectionEvent.CANDIDATE, JSON.stringify(event.channel))) {
+            this.dataChannels.push(event.channel)
+        }
+    }
+
     private setHandlers() {
         this.peerConnection.addEventListener(
             "icecandidate",
@@ -87,8 +97,8 @@ export class PeerConnection extends EventEmitter {
         )
 
         this.peerConnection.addEventListener(
-            "icecandidateerror",
-            event => console.log("ICE ERROR", event)
+            "datachannel",
+            this.handleDataChannel.bind(this)
         )
     }
 }

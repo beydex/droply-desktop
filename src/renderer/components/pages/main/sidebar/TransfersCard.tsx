@@ -23,11 +23,10 @@ export function TransfersCard() {
             name="Active transfers"
             description="Real-time uploads and downloads"
         >
-
             {
                 transfers.length > 0
                     ? transfers.map(transfer =>
-                        <TransferPerson key={transfer.id}
+                        <TransferPerson key={transfer.request.id}
                                         transfer={transfer}/>
                     )
                     : <Empty/>

@@ -24,14 +24,14 @@
 }
 
 .AcceptIcon {
-    color: #00E676;
+    color: $accept_color;
     font-size: 30px;
     cursor: pointer;
 }
 
 .RejectIcon {
     margin-left: 15px;
-    color: #FF1744;
+    color: $reject_color;
     font-size: 30px;
     cursor: pointer;
 }

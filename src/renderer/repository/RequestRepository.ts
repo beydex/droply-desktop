@@ -245,7 +245,7 @@ export class RequestRepository extends EventEmitter {
             await request.peerConnection.setAnswer(update.content.answer)
 
             // Creating transfer once request was successfully accepted
-            TransferRepository.Instance.createTransfer(request)
+            await TransferRepository.Instance.createTransfer(request)
         }
 
         this.deleteRequest(request.id)
