@@ -6,7 +6,7 @@ import {Person} from "renderer/components/pages/main/person/common/Person";
 
 interface Props {
     name: string,
-    avatar: string | React.ReactNode,
+    avatar: string,
     size: number,
     filesCount: number,
     percent: number,

@@ -26,15 +26,6 @@ export function HistorySection() {
         await listContacts()
     }
 
-    async function sendRequest(user: FullUser) {
-        await RequestRepository.Instance.createRequest(
-            user,
-            FileRepository.Instance.getFiles()
-        )
-
-        navigate("../")
-    }
-
     return (
         <Section title="History">
             <div className={Styles.List}>
@@ -43,9 +34,7 @@ export function HistorySection() {
                         ? contacts.map(contact =>
                             <HistoryPerson
                                 key={contact.user.id}
-                                contact={contact}
-                                onClick={sendRequest}
-                                onDelete={deleteContact}/>
+                                contact={contact}/>
                         )
                         : <Loading text="Nothing here"/>
                 }

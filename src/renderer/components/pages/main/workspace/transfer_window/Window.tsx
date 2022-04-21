@@ -2,9 +2,8 @@ import React from 'react'
 import Styles from './Window.module.scss'
 import {useNavigate} from "react-router-dom";
 import BaseHelper from 'renderer/helpers/BaseHelper';
-import { FilesSection } from './FilesSection';
-import { UserSection } from './UserSection';
-import { CancelButton } from './CancelButton';
+import {UserSection} from './UserSection';
+import {CancelButton} from './CancelButton';
 
 export function Window() {
     let navigate = useNavigate();
@@ -21,7 +20,7 @@ export function Window() {
                     arrow_back
                 </span>
                 <div className={Styles.TitleText}>
-                Active transfer
+                    Active transfer
                 </div>
             </div>
             <div className={Styles.Hint}>
@@ -29,7 +28,7 @@ export function Window() {
             </div>
 
             <UserSection/>
-            <FilesSection/>
+            {/*<FilesSection/>*/}
             <CancelButton/>
         </div>
     )
