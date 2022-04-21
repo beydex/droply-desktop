@@ -3,22 +3,29 @@ import Styles from "./RequestPerson.module.scss";
 
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
-import {Request} from "renderer/repository/RequestRepository";
+import {Request, RequestRepository} from "renderer/repository/RequestRepository";
 
 interface Props {
     request: Request
-
-    onAccept?: (transfer: Request) => void
-    onCancel?: (transfer: Request) => void
 }
 
-export function RequestPerson({request, onAccept, onCancel}: Props) {
-    let user = request.outgoing ? request.receiver : request.sender
+export function RequestPerson({request}: Props) {
+    async function onAccept() {
+        await request.answer(true)
+    }
+
+    async function onCancel() {
+        if (request.outgoing) {
+            await request.cancel()
+        } else {
+            await request.answer(true)
+        }
+    }
 
     return (
         <Person
-            name={user.name}
-            avatar={user.avatarUrl}
+            name={request.user.name}
+            avatar={request.user.avatarUrl}
 
             hint={
                 <div className={BaseHelper.classes(Styles.Hint, Styles.Ellipsis)}>
@@ -36,18 +43,18 @@ export function RequestPerson({request, onAccept, onCancel}: Props) {
             action={
                 <>
                     {
-                        request.outgoing
-                            ? <></>
-                            : (
-                                <span className={BaseHelper.classes(Styles.AcceptIcon, Styles.MaterialIcon)}
-                                      onClick={() => onAccept?.(request)}>
-                                    done
-                                </span>
-                            )
+                        request.outgoing ? (
+                            <></>
+                        ) : (
+                            <span className={BaseHelper.classes(Styles.AcceptIcon, Styles.MaterialIcon)}
+                                  onClick={onAccept}>
+                                done
+                            </span>
+                        )
                     }
 
                     <span className={BaseHelper.classes(Styles.RejectIcon, Styles.MaterialIcon)}
-                          onClick={() => onCancel?.(request)}>
+                          onClick={onCancel}>
                         close
                     </span>
                 </>

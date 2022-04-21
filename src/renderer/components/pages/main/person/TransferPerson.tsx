@@ -1,66 +1,76 @@
 import React from "react";
 import Styles from "./TransferPerson.module.scss";
 
+import {Request, RequestState} from "renderer/repository/RequestRepository";
+
 import {Person} from "renderer/components/pages/main/person/common/Person";
 import BaseHelper from "renderer/helpers/BaseHelper";
-import {Transfer, TransferState} from "renderer/repository/TransferRepository";
 
 interface Props {
-    transfer: Transfer
+    request: Request
 }
 
-export function TransferPerson({transfer}: Props) {
-    let request = transfer.request
-    let user = request.outgoing ? request.receiver : request.sender
-
-    function renderHint(): React.ReactNode {
-        switch (transfer.state) {
-            case TransferState.EXCHANGING:
-                return (
-                    <>
-                        <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                            {request.outgoing ? "north" : "south"}
-                        </span>
-                        &nbsp;RTC exchanging
-                    </>
-                )
-
-            case TransferState.ACTIVE:
-                return (
-                    <>
-                        <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
-                            {request.outgoing ? "north" : "south"}
-                        </span>
-                        &nbsp;{request.outgoing ? "Sending" : "Receiving"}&nbsp;
-                        <span className={Styles.HintFiles}>
-                            {request.files.length} files
-                        </span>
-                    </>
-                )
-
-            case TransferState.DONE:
-                return (
-                    <>
-                        <span className={BaseHelper.classes(Styles.DoneIcon, Styles.MaterialIcon)}>
-                            done
-                        </span>
-                        &nbsp;{request.outgoing ? "Sent" : "Received"}&nbsp;
-                        <span className={Styles.HintFiles}>
-                            {request.files.length} file(s)
-                        </span>
-                    </>
-                )
-        }
-    }
-
+export function TransferPerson({request}: Props) {
     return (
         <Person
-            name={user.name}
-            avatar={user.avatarUrl}
+            name={request.user.name}
+            avatar={request.user.avatarUrl}
 
             hint={
                 <div className={Styles.Hint}>
-                    {renderHint()}
+                    {
+                        request.state == RequestState.EXCHANGING ? (
+                            <span className={BaseHelper.classes(Styles.ExchangeIcon, Styles.MaterialIcon)}>
+                                swap_horiz
+                            </span>
+                        ) : request.state == RequestState.ACTIVE ? (
+                            <span className={BaseHelper.classes(Styles.ArrowIcon, Styles.MaterialIcon)}>
+                                {request.outgoing ? "north" : "south"}
+                            </span>
+                        ) : request.state == RequestState.DONE ? (
+                            <span className={BaseHelper.classes(Styles.DoneIcon, Styles.MaterialIcon)}>
+                                done
+                            </span>
+                        ) : (
+                            <span className={BaseHelper.classes(Styles.ErrorIcon, Styles.MaterialIcon)}>
+                                cancel
+                            </span>
+                        )
+                    }
+
+                    {
+                        request.state == RequestState.EXCHANGING ? (
+                            <>
+                                &nbsp;RTC exchanging
+                            </>
+                        ) : request.state == RequestState.ACTIVE ? (
+                            <>
+                                &nbsp;{request.outgoing ? "Sending" : "Receiving"}&nbsp;
+                                <span className={Styles.HintFiles}>
+                                    {request.files.length} files
+                                </span>
+                            </>
+                        ) : request.state == RequestState.DONE ? (
+                            <>
+                                &nbsp;{request.outgoing ? "Sent" : "Received"}&nbsp;
+                            </>
+                        ) : (
+                            <>
+                                &nbsp;Transfer failed
+                            </>
+                        )
+                    }
+
+                    {
+                        [RequestState.ACTIVE, RequestState.DONE].includes(request.state) ? (
+                            <span className={Styles.HintFiles}>
+                                {request.files.length} file(s)
+                            </span>
+                        ) : (
+                            <></>
+                        )
+                    }
+
                 </div>
             }
 

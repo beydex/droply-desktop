@@ -2,20 +2,28 @@ import {Card} from './common/Card';
 import React, {useEffect, useState} from 'react';
 import {Empty} from "renderer/components/pages/main/sidebar/common/Empty";
 import {TransferPerson} from "renderer/components/pages/main/person/TransferPerson";
-import {Transfer, TransferRepository, TransferRepositoryEvent} from "renderer/repository/TransferRepository";
+import {Request, RequestRepository, RequestRepositoryEvent, RequestState} from "renderer/repository/RequestRepository";
 
 export function TransfersCard() {
-    let [transfers, setTransfers] = useState<Transfer[]>([])
+    let [requests, setRequests] = useState<Request[]>([])
 
     useEffect(() => {
-        TransferRepository.Instance.on(TransferRepositoryEvent.UPDATE, list)
+        RequestRepository.Instance.on(RequestRepositoryEvent.UPDATE, list)
 
         // Running first time
         list().then()
     }, [])
 
     async function list() {
-        setTransfers(TransferRepository.Instance.list())
+        setRequests(
+            RequestRepository.Instance
+                .listRequests([
+                    RequestState.EXCHANGING,
+                    RequestState.ACTIVE,
+                    RequestState.DONE,
+                    RequestState.ERROR
+                ])
+        )
     }
 
     return (
@@ -24,10 +32,10 @@ export function TransfersCard() {
             description="Real-time uploads and downloads"
         >
             {
-                transfers.length > 0
-                    ? transfers.map(transfer =>
-                        <TransferPerson key={transfer.request.id}
-                                        transfer={transfer}/>
+                requests.length > 0
+                    ? requests.map(request =>
+                        <TransferPerson key={request.id}
+                                        request={request}/>
                     )
                     : <Empty/>
             }

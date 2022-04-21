@@ -17,18 +17,19 @@ export interface DroplyUpdate<T> {
 }
 
 export interface DroplyMessage {
-    success?: string
+    success?: boolean
     update?: DroplyUpdate<any>
 }
 
-interface QueueItem {
-    state: QueueItemState,
+interface Request {
+    state: RequestState,
+    timeout: ReturnType<typeof setTimeout>,
 
     request: DroplyRequest<any>,
     callback: (response: any) => void
 }
 
-enum QueueItemState {
+enum RequestState {
     PENDING,
     SENDING
 }
@@ -40,17 +41,14 @@ export enum WebsocketHelperEvent {
 }
 
 export default class WebsocketHelper extends EventEmitter {
-    public static Instance = new WebsocketHelper(constants.SERVER_ADDR);
-    private readonly url: string
-    private readonly queue: QueueItem[]
+    public static Instance = new WebsocketHelper();
+
     private websocket: WebSocket
+    private requests: Request[] = []
 
-    private constructor(url: string) {
+    private constructor() {
         super()
-        this.url = url
         this.websocket = this.createWebsocket()
-
-        this.queue = []
 
         // Starting to send requests from queue
         this.sendRequests().then()
@@ -63,50 +61,24 @@ export default class WebsocketHelper extends EventEmitter {
                 return
             }
 
-            this.once(WebsocketHelperEvent.OPEN, () => {
-                console.log("SOCKET OPENED")
-                // Setting to PENDING state
-                for (let item of this.queue) {
-                    item.state = QueueItemState.PENDING
-                }
-
-                resolve()
-            })
+            this.once(WebsocketHelperEvent.OPEN, resolve)
         })
     }
 
     public async request<T, U extends DroplyResponse>(request: DroplyRequest<T>): Promise<U> {
         return new Promise<U>(resolve => {
-            this.queue.push({
-                state: QueueItemState.PENDING,
-                request: request,
+            this.requests.push({
+                state: RequestState.PENDING,
+                timeout: setTimeout(this.handleTimeout.bind(this), constants.WEBSOCKET_REQUEST_TIMEOUT),
 
-                callback: response => {
-                    resolve(response);
-                }
-            });
+                request: request,
+                callback: resolve
+            })
+
+            console.log("[SOCKET]: Request", JSON.stringify(request, null, 2))
 
             this.emit(WebsocketHelperEvent.REQUEST)
-            console.log("request", JSON.stringify(request, null, 2))
         })
-    }
-
-    private createWebsocket(): WebSocket {
-        let websocket = new WebSocket(this.url)
-
-        websocket.onopen = () => {
-            this.handleOpen()
-        }
-
-        websocket.onclose = () => {
-            this.handleClose()
-        }
-
-        websocket.onmessage = message => {
-            this.handleMessage(message)
-        }
-
-        return websocket
     }
 
     private async sendRequests() {
@@ -125,29 +97,23 @@ export default class WebsocketHelper extends EventEmitter {
         return new Promise<DroplyRequest<any>>(async resolve => {
             await this.waitOpen()
 
-            let item = this.getQueueFirstPendingItem()
+            let item = this.getPendingRequest()
             if (item != null) {
-                item.state = QueueItemState.SENDING
-
                 resolve(item.request)
                 return
             }
 
             // No item found
             this.once(WebsocketHelperEvent.REQUEST, () => {
-                let item = this.getQueueFirstPendingItem()
-
-                // Queue must have at least one element
-                item.state = QueueItemState.SENDING
-
-                resolve(item.request)
+                resolve(this.getPendingRequest().request)
             })
         })
     }
 
-    private getQueueFirstPendingItem(): QueueItem {
-        for (let item of this.queue) {
-            if (item.state == QueueItemState.PENDING) {
+    private getPendingRequest(): Request {
+        for (let item of this.requests) {
+            if (item.state == RequestState.PENDING) {
+                item.state = RequestState.SENDING
                 return item
             }
         }
@@ -155,34 +121,76 @@ export default class WebsocketHelper extends EventEmitter {
         return null
     }
 
+    private createWebsocket(): WebSocket {
+        let websocket = new WebSocket(
+            constants.WEBSOCKET_SERVER_ADDR
+        )
+
+        websocket.addEventListener("open", this.handleOpen.bind(this))
+        websocket.addEventListener("close", this.handleClose.bind(this))
+        websocket.addEventListener("message", this.handleMessage.bind(this))
+
+        return websocket
+    }
+
     private handleOpen() {
+        console.log("[SOCKET]: Opened")
+
+        // Updating request queue
+        this.requests = []
+
         this.emit(WebsocketHelperEvent.OPEN)
     }
 
     private handleClose() {
-        this.emit(WebsocketHelperEvent.CLOSE)
+        console.log("[SOCKET]: Closed")
+
+        // Updating request queue
+        this.requests.forEach(request => clearTimeout(request.timeout))
+
+        // Recreating socket
         this.websocket = this.createWebsocket()
+
+        this.emit(WebsocketHelperEvent.CLOSE)
     }
 
-    private handleMessage(message: MessageEvent<string>) {
-        let parsedMessage: DroplyMessage
+    private handleMessage(event: MessageEvent<string>) {
+        let message: DroplyMessage
         try {
-            parsedMessage = JSON.parse(message.data)
+            message = JSON.parse(event.data)
         } catch (e) {
             return;
         }
 
-        if (parsedMessage.update) {
-            console.log("update", JSON.stringify(parsedMessage, null, 2))
-            this.emit(parsedMessage.update.type, parsedMessage.update)
+        if (message.update) {
+            this.handleUpdate(message.update)
             return;
         }
 
-        if (this.queue.length == 0) {
-            return;
+        if (this.requests.length != 0) {
+            this.handleResponse(message)
         }
+    }
 
-        console.log("response", JSON.stringify(parsedMessage, null, 2))
-        this.queue.shift().callback(parsedMessage)
+    private handleUpdate(update: DroplyUpdate<any>) {
+        console.log("[SOCKET]: Update", JSON.stringify(update, null, 2))
+
+        this.emit(update.type, update.content)
+    }
+
+    private handleResponse(response) {
+        console.log("[SOCKET]: Response", JSON.stringify(response, null, 2))
+
+        let request = this.requests.shift()
+
+        clearTimeout(request.timeout)
+        request.callback(response)
+    }
+
+    private handleTimeout() {
+        console.log("[SOCKET]: Timeout")
+
+        // Closing connection on timeout
+        this.websocket.close()
     }
 }

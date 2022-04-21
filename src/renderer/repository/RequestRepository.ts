@@ -1,10 +1,12 @@
 import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
-import {FullUser, isFullUser, User, UserRepository} from "renderer/repository/UserRepository";
-import {PeerConnection} from "renderer/helpers/WebrtcHelper";
+import {FullUser, isFullUser, User} from "renderer/repository/UserRepository";
+import {PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
 import {EventEmitter} from "events";
 import {AuthRepository} from "renderer/repository/AuthRepository";
-import {FileDescription} from "renderer/repository/FileRepository";
-import {TransferRepository} from "renderer/repository/TransferRepository";
+import {FileDescription, FileRepository} from "renderer/repository/FileRepository";
+import {RemoveMethods} from "renderer/types";
+
+import * as constants from "renderer/constants"
 
 /**
  * "request/send" method
@@ -60,12 +62,26 @@ interface RequestCancelResponse extends DroplyResponse {
 }
 
 /**
+ * "request/signal" method
+ */
+
+const REQUEST_SIGNAL_PATH = "request/signal"
+
+interface RequestSignalRequest {
+    requestId: number,
+    content: string
+}
+
+interface RequestSignalResponse extends DroplyResponse {
+}
+
+/**
  * "REQUEST_RECEIVED" update
  */
 
 const REQUEST_RECEIVED_UPDATE_TYPE = "REQUEST_RECEIVED"
 
-interface RequestReceivedContent {
+interface RequestReceivedUpdate {
     requestId: number,
 
     sender: User,
@@ -83,7 +99,7 @@ interface RequestReceivedContent {
 
 const REQUEST_ANSWERED_UPDATE_TYPE = "REQUEST_ANSWERED"
 
-interface RequestAnsweredContent {
+interface RequestAnsweredUpdate {
     requestId: number,
     accept: boolean,
 
@@ -91,17 +107,17 @@ interface RequestAnsweredContent {
     answer?: string
 }
 
-export interface Request {
-    id: number
-    outgoing: boolean
+/**
+ * "REQUEST_SIGNAL" update
+ */
 
-    sender: User
-    receiver: User
+const REQUEST_SIGNAL_UPDATE_TYPE = "REQUEST_SIGNAL"
 
-    files: File[] | FileDescription[]
+interface RequestSignalUpdate {
+    requestId: number,
 
-    // WebRTC
-    peerConnection: PeerConnection
+    // WebRTC data
+    content: string
 }
 
 export enum RequestRepositoryEvent {
@@ -118,10 +134,11 @@ export class RequestRepository extends EventEmitter {
         this.setHandlers()
     }
 
-    public async sendRequest(user: FullUser | User, files: File[]): Promise<boolean> {
+    public async createRequest(user: FullUser | User): Promise<boolean> {
         let peerConnection = new PeerConnection()
 
         await AuthRepository.Instance.waitAuth()
+        let files = FileRepository.Instance.getFiles()
 
         let response = await WebsocketHelper.Instance
             .request<RequestSendRequest, RequestSendResponse>({
@@ -133,39 +150,34 @@ export class RequestRepository extends EventEmitter {
                             : {receiverUrid: user.urid}
                     ),
 
-                    files: files.map(file => {
-                        peerConnection.createDataChannel(file.name)
-
-                        return {
-                            name: file.name,
-                            size: file.size
-                        }
-                    }),
+                    files: files.map(file => ({
+                        name: file.name,
+                        size: file.size
+                    })),
 
                     offer: await peerConnection.createOffer()
                 }
             })
 
         if (response.success) {
-            this.addRequest({
-                id: response.request.requestId,
-                outgoing: true,
-
-                sender: await UserRepository.Instance.getUser(),
-                receiver: user,
-
-                files,
-                peerConnection
-            })
+            this.addRequest(
+                new Request({
+                    id: response.request.requestId,
+                    outgoing: true,
+                    user,
+                    files,
+                    peerConnection
+                })
+            )
         }
 
         return response.success
     }
 
-    public async answerRequest(id: number, accept: boolean): Promise<boolean> {
-        let request = this.getRequest(id, false)
+    public async answerRequest(id: number, accept: boolean) {
+        let request = this.requests[id]
         if (request == null) {
-            return false
+            return
         }
 
         await AuthRepository.Instance.waitAuth()
@@ -183,21 +195,22 @@ export class RequestRepository extends EventEmitter {
                 }
             })
 
-
         if (response.success && accept) {
-            TransferRepository.Instance.createTransfer(request).then()
+            // Starting transfer in background
+            request.transfer().then()
+        } else {
+            this.deleteRequest(request.id)
+
+            if (!response.success) {
+                alert("Failed to answer request")
+            }
         }
-
-        // Request must be deleted anyway on answer
-        this.deleteRequest(id)
-
-        return response.success
     }
 
-    public async cancelRequest(id: number): Promise<boolean> {
-        let request = this.getRequest(id, true)
+    public async cancelRequest(id: number) {
+        let request = this.requests[id]
         if (request == null) {
-            return false
+            return
         }
 
         await AuthRepository.Instance.waitAuth()
@@ -205,73 +218,103 @@ export class RequestRepository extends EventEmitter {
         let response = await WebsocketHelper.Instance
             .request<RequestCancelRequest, RequestCancelResponse>({
                 path: REQUEST_CANCEL_PATH,
-                request: {
-                    requestId: id
-                }
+                request: {requestId: request.id}
             })
 
-        if (response.success) {
-            this.deleteRequest(id)
+        this.deleteRequest(request.id)
+
+        if (!response.success) {
+            alert("Failed to cancel request")
+        }
+    }
+
+    public async sendRequestCandidate(id: number, candidate: string) {
+        let request = this.requests[id]
+        if (request == null) {
+            return
         }
 
-        return response.success
+        await AuthRepository.Instance.waitAuth()
+
+        await WebsocketHelper.Instance
+            .request<RequestSignalRequest, RequestSignalResponse>({
+                path: REQUEST_SIGNAL_PATH,
+                request: {
+                    requestId: request.id,
+                    content: candidate
+                }
+            })
     }
 
-    public list(): Request[] {
-        return Object.values(this.requests)
+    public listRequests(states: RequestState[]): Request[] {
+        return Object.values(this.requests).filter(request => states.includes(request.state))
     }
 
-    private async handleRequest(update: DroplyUpdate<RequestReceivedContent>) {
+    private async handleRequest(update: RequestReceivedUpdate) {
         let peerConnection = new PeerConnection()
-        await peerConnection.setOffer(update.content.offer)
+        await peerConnection.setOffer(update.offer)
 
-        this.addRequest({
-            id: update.content.requestId,
-            outgoing: false,
-
-            sender: update.content.sender,
-            receiver: update.content.receiver,
-
-            files: update.content.files,
-            peerConnection
-        })
+        this.addRequest(
+            new Request({
+                id: update.requestId,
+                outgoing: false,
+                user: update.sender,
+                files: update.files,
+                peerConnection
+            })
+        )
     }
 
-    private async handleAnswer(update: DroplyUpdate<RequestAnsweredContent>) {
-        let request = this.requests[update.content.requestId]
+    private async handleAnswer(update: RequestAnsweredUpdate) {
+        let request = this.requests[update.requestId]
         if (request == null) {
             return;
         }
 
+        if (update.accept) {
+            await request.peerConnection.setAnswer(update.answer)
 
-        if (update.content.accept) {
-            await request.peerConnection.setAnswer(update.content.answer)
+            // Starting transfer in background
+            request.transfer().then()
+        } else {
+            this.deleteRequest(update.requestId)
+        }
+    }
 
-            TransferRepository.Instance.createTransfer(request).then()
+    private async handleSignal(update: RequestSignalUpdate) {
+        let request = this.requests[update.requestId]
+        if (request == null) {
+            return;
         }
 
-        // Request must be deleted anyway on answer
-        this.deleteRequest(request.id)
+        await request.peerConnection.addCandidate(update.content)
     }
 
     private addRequest(request: Request) {
         this.requests[request.id] = request
 
-        // Request map updated
+        this.setRequestHandlers(request)
         this.emit(RequestRepositoryEvent.UPDATE)
-    }
-
-    private getRequest(id: number, outgoing: boolean): Request {
-        let request = this.requests[id]
-
-        return request != null && request.outgoing == outgoing ? request : null
     }
 
     private deleteRequest(id: number) {
         delete this.requests[id]
 
-        // Request map updated
         this.emit(RequestRepositoryEvent.UPDATE)
+    }
+
+    private setRequestHandlers(request: Request) {
+        request.on(RequestEvent.UPDATE, () => {
+            this.emit(RequestRepositoryEvent.UPDATE)
+
+            if ([RequestState.DONE, RequestState.ERROR].includes(request.state)) {
+                setTimeout(
+                    this.deleteRequest.bind(this),
+                    constants.WEBSOCKET_REQUEST_TIMEOUT,
+                    request.id
+                )
+            }
+        })
     }
 
     private setHandlers() {
@@ -280,5 +323,106 @@ export class RequestRepository extends EventEmitter {
 
         WebsocketHelper.Instance
             .on(REQUEST_ANSWERED_UPDATE_TYPE, this.handleAnswer.bind(this))
+
+        WebsocketHelper.Instance
+            .on(REQUEST_SIGNAL_UPDATE_TYPE, this.handleSignal.bind(this))
+
+    }
+}
+
+export enum RequestState {
+    CREATED,
+    EXCHANGING,
+    ACTIVE,
+    DONE,
+    ERROR
+}
+
+export enum RequestEvent {
+    UPDATE = "update"
+}
+
+export class Request extends EventEmitter {
+    public id: number
+    public outgoing: boolean
+
+    public user: User
+    public files: File[] | FileDescription[]
+
+    public state = RequestState.CREATED
+    public peerConnection: PeerConnection
+
+    constructor(params: Omit<RemoveMethods<Request>, "state">) {
+        super()
+        Object.assign(this, params)
+    }
+
+    public async answer(accept: boolean) {
+        await RequestRepository.Instance.answerRequest(this.id, accept)
+    }
+
+    public async cancel() {
+        await RequestRepository.Instance.cancelRequest(this.id)
+    }
+
+    public async transfer() {
+        if (this.outgoing) {
+            await this.send()
+        } else {
+            await this.receive()
+        }
+    }
+
+    public async send() {
+        this.setState(RequestState.EXCHANGING)
+        this.sendCandidates()
+
+        await this.peerConnection.getDataChannel().waitOpen()
+        this.setState(RequestState.ACTIVE)
+
+        if (await this.peerConnection.getDataChannel().send(this.files as File[])) {
+            this.setState(RequestState.DONE)
+        } else {
+            this.setState(RequestState.ERROR)
+        }
+    }
+
+    public async receive() {
+        this.setState(RequestState.EXCHANGING)
+
+        await this.peerConnection.getDataChannel().waitOpen()
+        this.setState(RequestState.ACTIVE)
+
+        let result = await this.peerConnection.getDataChannel()
+            .receive(this.files as FileDescription[])
+
+        if (result) {
+            this.setState(RequestState.DONE)
+        } else {
+            this.setState(RequestState.ERROR)
+        }
+    }
+
+    private sendCandidates() {
+        this.peerConnection
+            .on(PeerConnectionEvent.CANDIDATE, async candidate => {
+                await RequestRepository.Instance.sendRequestCandidate(this.id, candidate)
+            })
+
+        this.peerConnection.getCandidates()
+            .map(async candidate => {
+                await RequestRepository.Instance.sendRequestCandidate(this.id, candidate)
+            })
+    }
+
+    private receiveData(data: ArrayBuffer) {
+
+    }
+
+    private setState(state: RequestState) {
+        if (this.state != state) {
+            this.state = state
+            this.emit(RequestEvent.UPDATE)
+        }
     }
 }

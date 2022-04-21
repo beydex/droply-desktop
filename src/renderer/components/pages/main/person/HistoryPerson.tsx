@@ -4,16 +4,28 @@ import Styles from "./HistoryPerson.module.scss";
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
 import {FullUser} from "renderer/repository/UserRepository";
-import {Contact} from "renderer/repository/ContactsRepository";
+import {Contact, ContactsRepository} from "renderer/repository/ContactsRepository";
+import {createDeflateRaw} from "zlib";
+import {RequestRepository} from "renderer/repository/RequestRepository";
+import {useNavigate} from "react-router-dom";
+import {MainPageRouting} from "renderer/components/pages/main/Page";
 
 interface Props {
     contact: Contact
-
-    onClick?: (user: FullUser) => void
-    onDelete?: (user: FullUser) => void
 }
 
-export function HistoryPerson({contact, onClick, onDelete}: Props) {
+export function HistoryPerson({contact}: Props) {
+    let navigate = useNavigate()
+
+    async function onRequest() {
+        await RequestRepository.Instance.createRequest(contact.user)
+        navigate("../")
+    }
+
+    async function onDelete() {
+        await ContactsRepository.Instance.deleteContact(contact.user.id)
+    }
+
     return (
         <Person
             name={contact.user.name}
@@ -24,15 +36,13 @@ export function HistoryPerson({contact, onClick, onDelete}: Props) {
                 </div>
             }
             action={
-                <>
-                    <span className={BaseHelper.classes(Styles.Options, Styles.MaterialIcon)}
-                          onClick={() => onDelete?.(contact.user)}>
-                        close
-                    </span>
-                </>
+                <span className={BaseHelper.classes(Styles.Options, Styles.MaterialIcon)}
+                      onClick={onDelete}>
+                    close
+                </span>
             }
             className={Styles.Person}
-            onClick={() => onClick?.(contact.user)}
+            onClick={onRequest}
         />
     )
 }

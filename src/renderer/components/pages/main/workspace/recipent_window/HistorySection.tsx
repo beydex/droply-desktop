@@ -27,7 +27,7 @@ export function HistorySection() {
     }
 
     async function sendRequest(user: FullUser) {
-        await RequestRepository.Instance.sendRequest(
+        await RequestRepository.Instance.createRequest(
             user,
             FileRepository.Instance.getFiles()
         )
