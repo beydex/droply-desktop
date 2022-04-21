@@ -67,6 +67,8 @@ export class PeerConnection extends EventEmitter {
     private setHandlers() {
         this.peerConnection
             .addEventListener("icecandidate", this.handleIceCandidate.bind(this))
+
+        this.peerConnection.addEventListener("icecandidateerror", e => console.log(e))
     }
 }
 
@@ -82,8 +84,6 @@ interface Header {
 export class DataChannel extends EventEmitter {
     private peerConnection: RTCPeerConnection
     private dataChannel: RTCDataChannel
-
-    private messages = []
 
     constructor(peerConnection: RTCPeerConnection) {
         super();
@@ -115,6 +115,7 @@ export class DataChannel extends EventEmitter {
                 }
 
                 i += chunk.byteLength
+                console.log("SENDING", file.name, i)
             }
 
             if (!await this.sendData(DATA_CHANNEL_EOF)) {

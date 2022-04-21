@@ -33,7 +33,7 @@ export function TransferPerson({request}: Props) {
                             </span>
                         ) : (
                             <span className={BaseHelper.classes(Styles.ErrorIcon, Styles.MaterialIcon)}>
-                                cancel
+                                close
                             </span>
                         )
                     }
@@ -46,9 +46,6 @@ export function TransferPerson({request}: Props) {
                         ) : request.state == RequestState.ACTIVE ? (
                             <>
                                 &nbsp;{request.outgoing ? "Sending" : "Receiving"}&nbsp;
-                                <span className={Styles.HintFiles}>
-                                    {request.files.length} files
-                                </span>
                             </>
                         ) : request.state == RequestState.DONE ? (
                             <>

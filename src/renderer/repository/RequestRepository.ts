@@ -389,6 +389,7 @@ export class Request extends EventEmitter {
 
     public async receive() {
         this.setState(RequestState.EXCHANGING)
+        this.sendCandidates()
 
         await this.peerConnection.getDataChannel().waitOpen()
         this.setState(RequestState.ACTIVE)
