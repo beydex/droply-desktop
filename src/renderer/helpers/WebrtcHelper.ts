@@ -1,7 +1,6 @@
 import * as constants from "renderer/constants"
 import {EventEmitter} from "events";
 import {FileDescription} from "renderer/repository/FileRepository";
-import BaseHelper from "renderer/helpers/BaseHelper";
 
 export enum PeerConnectionEvent {
     CANDIDATE = "candidate"
@@ -141,7 +140,6 @@ export class DataChannel extends EventEmitter {
         await Promise.race([
             this.waitClose(),
             this.waitLowBuffer(),
-            BaseHelper.timeout(DATA_CHANNEL_LONG_LOW_BUFFER_TIMEOUT)
         ])
 
         if (this.isOpened()) {

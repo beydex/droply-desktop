@@ -14,8 +14,9 @@ export const WEBRTC_PEER_CONNECTION_CONFIG: RTCConfiguration = {
             credential: "password"
         },
     ],
+    iceTransportPolicy: "relay"
 }
 
 export const WEBRTC_CHANNEL_CHUNK_SIZE = 1024 * 128
 
-export const WEBRTC_TIMEOUT = 10000
+export const WEBRTC_TIMEOUT = 20000
