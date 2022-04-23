@@ -1,6 +1,7 @@
 import {FullUser} from "renderer/repository/UserRepository";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
+import {EventEmitter} from "events";
 
 /**
  * "contact/list" method
@@ -25,6 +26,7 @@ interface ContactDeleteRequest {
 }
 
 interface ContactDeleteResponse extends DroplyResponse {
+    entries: Contact[]
 }
 
 export interface Contact {
@@ -32,10 +34,20 @@ export interface Contact {
     lastSuccessRequestDate: string
 }
 
-export class ContactsRepository {
+export enum ContactRepositoryEvent {
+    UPDATE = "update"
+}
+
+export class ContactsRepository extends EventEmitter {
     public static Instance = new ContactsRepository()
 
+    private contacts: Contact[]
+
     public async listContacts(): Promise<Contact[]> {
+        if (this.contacts != null) {
+            return this.contacts
+        }
+
         await AuthRepository.Instance.waitAuth()
 
         let response = await WebsocketHelper.Instance
@@ -45,10 +57,10 @@ export class ContactsRepository {
             })
 
         if (response.success) {
-            return response.entries
+            this.updateContacts(response.entries)
         }
 
-        return null
+        return this.contacts
     }
 
     public async deleteContact(userId: number): Promise<boolean> {
@@ -62,6 +74,15 @@ export class ContactsRepository {
                 }
             })
 
+        if (response.success) {
+            this.updateContacts(response.entries)
+        }
+
         return response.success
+    }
+
+    private updateContacts(contacts: Contact[]) {
+        this.contacts = contacts
+        this.emit(ContactRepositoryEvent.UPDATE)
     }
 }

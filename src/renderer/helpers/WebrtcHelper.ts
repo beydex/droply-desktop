@@ -1,6 +1,7 @@
 import * as constants from "renderer/constants"
 import {EventEmitter} from "events";
 import {FileDescription} from "renderer/repository/FileRepository";
+import BaseHelper from "renderer/helpers/BaseHelper";
 
 export enum PeerConnectionEvent {
     CANDIDATE = "candidate"
@@ -75,6 +76,7 @@ export class PeerConnection extends EventEmitter {
 const DATA_CHANNEL_ID = 1000
 const DATA_CHANNEL_LABEL = "default"
 const DATA_CHANNEL_EOF = "EOF"
+const DATA_CHANNEL_LONG_LOW_BUFFER_TIMEOUT = 1000
 
 interface Header {
     name: string,
@@ -84,6 +86,8 @@ interface Header {
 export class DataChannel extends EventEmitter {
     private peerConnection: RTCPeerConnection
     private dataChannel: RTCDataChannel
+
+    private timeout;
 
     constructor(peerConnection: RTCPeerConnection) {
         super();
@@ -97,6 +101,7 @@ export class DataChannel extends EventEmitter {
 
     public async send(files: File[]): Promise<boolean> {
         await this.waitOpen()
+        this.setTimeout()
 
         for (let file of files) {
             let header = JSON.stringify({name: file.name, size: file.size})
@@ -104,6 +109,8 @@ export class DataChannel extends EventEmitter {
             if (!await this.sendData(header)) {
                 return false
             }
+
+            console.log("[WEBRTC]: Sent header", header)
 
             for (let i = 0; i < file.size;) {
                 let chunk = await file
@@ -114,13 +121,15 @@ export class DataChannel extends EventEmitter {
                     return false
                 }
 
+                console.log("[WEBRTC]: Sent data")
                 i += chunk.byteLength
-                console.log("SENDING", file.name, i)
             }
 
             if (!await this.sendData(DATA_CHANNEL_EOF)) {
                 return false
             }
+
+            console.log("[WEBRTC]: Sent EOF")
         }
 
         return true
@@ -131,22 +140,35 @@ export class DataChannel extends EventEmitter {
 
         await Promise.race([
             this.waitClose(),
-            this.waitLowBuffer()
+            this.waitLowBuffer(),
+            BaseHelper.timeout(DATA_CHANNEL_LONG_LOW_BUFFER_TIMEOUT)
         ])
+
+        if (this.isOpened()) {
+            this.resetTimeout()
+        }
 
         return this.isOpened()
     }
 
     public async receive(files: FileDescription[]): Promise<boolean> {
         await this.waitOpen()
+        this.setTimeout()
 
         return new Promise<boolean>(resolve => {
             let index = 0;
 
+            let fd = 0;
             let receivedHeader: Header = null;
             let receivedSize = 0;
 
-            this.dataChannel.addEventListener("message", event => {
+            this.dataChannel.addEventListener("close", () => {
+                resolve(false)
+            })
+
+            this.dataChannel.addEventListener("message", async event => {
+                this.resetTimeout()
+
                 if (receivedHeader == null) {
                     // We need header
                     try {
@@ -156,15 +178,25 @@ export class DataChannel extends EventEmitter {
                         return
                     }
 
+                    console.log("[WEBRTC]: Received header", receivedHeader)
+
                     // Checking that we're receiving valid file
                     if (receivedHeader.name != files[index].name || receivedHeader.size != files[index].size) {
                         resolve(false)
                         return
                     }
+
+                    // Opening file
+                    fd = await DataChannel.openFile(receivedHeader.name)
+
                 } else if (event.data == DATA_CHANNEL_EOF) {
+                    console.log("[WEBRTC]: Received EOF")
+
                     // Checking that we received full file
                     if (receivedSize != files[index].size) {
+                        await DataChannel.closeFile(fd)
                         resolve(false)
+
                         return
                     }
 
@@ -175,19 +207,27 @@ export class DataChannel extends EventEmitter {
                     receivedSize = 0
 
                     if (index == files.length) {
+                        await DataChannel.closeFile(fd)
                         resolve(true)
+
+                        this.peerConnection.close()
                         return
                     }
+
                 } else {
                     let data = event.data as ArrayBuffer
+                    console.log("[WEBRTC]: Receiving data")
 
                     receivedSize += data.byteLength
+
                     if (receivedSize > files[index].size) {
+                        await DataChannel.closeFile(fd)
                         resolve(false)
+
                         return
                     }
 
-                    console.log("RECEIVED", files[index].name, data.byteLength)
+                    await DataChannel.writeFile(fd, new Uint8Array(data))
                 }
             })
         })
@@ -206,8 +246,8 @@ export class DataChannel extends EventEmitter {
             return
         }
 
-        return new Promise(resolve => {
-            this.dataChannel.addEventListener("open", resolve, {once: true})
+        return new Promise<void>(resolve => {
+            this.dataChannel.addEventListener("open", () => resolve(), {once: true})
         })
     }
 
@@ -216,14 +256,45 @@ export class DataChannel extends EventEmitter {
             return
         }
 
-        return new Promise(resolve => {
-            this.dataChannel.addEventListener("close", resolve, {once: true})
+        return new Promise<void>(resolve => {
+            this.dataChannel.addEventListener("close", () => resolve(), {once: true})
         })
     }
 
     private async waitLowBuffer() {
-        return new Promise(resolve => {
-            this.dataChannel.addEventListener("bufferedamountlow", resolve, {once: true})
+        if (this.dataChannel.bufferedAmount <= this.dataChannel.bufferedAmountLowThreshold) {
+            console.log("[WEBRTC]: Low buffer")
+            return
+        }
+
+        return new Promise<void>(resolve => {
+            this.dataChannel.addEventListener("bufferedamountlow", () => resolve(), {once: true})
         })
+    }
+
+    private setTimeout() {
+        this.timeout = setTimeout(this.handleTimeout.bind(this), constants.WEBRTC_TIMEOUT)
+    }
+
+    private resetTimeout() {
+        clearTimeout(this.timeout)
+        this.setTimeout()
+    }
+
+    private handleTimeout() {
+        console.log("[WEBRTC]: Timeout")
+        this.peerConnection.close()
+    }
+
+    private static async openFile(name: string): Promise<number> {
+        return await window.externalApi.fileStorage.open(name)
+    }
+
+    private static async closeFile(fd: number) {
+        return await window.externalApi.fileStorage.close(fd)
+    }
+
+    private static async writeFile(fd: number, data: ArrayBufferView) {
+        return await window.externalApi.fileStorage.write(fd, data)
     }
 }

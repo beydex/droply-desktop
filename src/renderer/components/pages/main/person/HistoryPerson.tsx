@@ -3,12 +3,9 @@ import Styles from "./HistoryPerson.module.scss";
 
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
-import {FullUser} from "renderer/repository/UserRepository";
 import {Contact, ContactsRepository} from "renderer/repository/ContactsRepository";
-import {createDeflateRaw} from "zlib";
 import {RequestRepository} from "renderer/repository/RequestRepository";
 import {useNavigate} from "react-router-dom";
-import {MainPageRouting} from "renderer/components/pages/main/Page";
 
 interface Props {
     contact: Contact

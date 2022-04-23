@@ -3,7 +3,7 @@ import Styles from "./RequestPerson.module.scss";
 
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
-import {Request, RequestRepository} from "renderer/repository/RequestRepository";
+import {Request} from "renderer/repository/RequestRepository";
 
 interface Props {
     request: Request
@@ -18,7 +18,7 @@ export function RequestPerson({request}: Props) {
         if (request.outgoing) {
             await request.cancel()
         } else {
-            await request.answer(true)
+            await request.answer(false)
         }
     }
 
