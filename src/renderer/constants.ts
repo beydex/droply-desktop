@@ -4,19 +4,11 @@ export const WEBSOCKET_REQUEST_TIMEOUT = 5000
 export const WEBRTC_PEER_CONNECTION_CONFIG: RTCConfiguration = {
     iceServers: [
         {
-            urls: "stun:mine.theseems.ru:3478",
-            username: "username",
-            credential: "password"
-        },
-        {
-            urls: "turn:mine.theseems.ru:3478",
-            username: "username",
-            credential: "password"
-        },
+            urls: "stun:stun.l.google.com:19302",
+        }
     ],
-    iceTransportPolicy: "relay"
 }
 
-export const WEBRTC_CHANNEL_CHUNK_SIZE = 1024 * 128
+export const WEBRTC_CHANNEL_CHUNK_SIZE = 1024 * 256
 
 export const WEBRTC_TIMEOUT = 20000

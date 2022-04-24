@@ -101,6 +101,7 @@ export class DataChannel extends EventEmitter {
     public async send(files: File[]): Promise<boolean> {
         await this.waitOpen()
         this.setTimeout()
+        this.logChosenCandidate()
 
         for (let file of files) {
             let header = JSON.stringify({name: file.name, size: file.size})
@@ -149,9 +150,39 @@ export class DataChannel extends EventEmitter {
         return this.isOpened()
     }
 
+    private logChosenCandidate() {
+        this.peerConnection.getStats(null).then(report => {
+            report.forEach(stat => {
+                let remoteId;
+                let localId;
+
+                if (stat.type == "candidate-pair" && stat.nominated) {
+                    remoteId = stat.remoteCandidateId
+                    localId = stat.localCandidateId
+                }
+
+                this.peerConnection.getStats(null).then(report => {
+                    report.forEach(stat => {
+                        if (stat.id == remoteId) {
+                            console.log("[WEBRTC]: Remote candidate", stat)
+                            return
+                        }
+
+                        if (stat.id == localId) {
+                            console.log("[WEBRTC]: Local candidate", stat)
+                            return
+                        }
+                    })
+                })
+
+            })
+        })
+    }
+
     public async receive(files: FileDescription[]): Promise<boolean> {
         await this.waitOpen()
         this.setTimeout()
+        this.logChosenCandidate()
 
         return new Promise<boolean>(resolve => {
             let index = 0;
