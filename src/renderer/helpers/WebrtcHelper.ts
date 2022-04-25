@@ -75,67 +75,125 @@ export class PeerConnection extends EventEmitter {
 const DATA_CHANNEL_ID = 1000
 const DATA_CHANNEL_LABEL = "default"
 const DATA_CHANNEL_EOF = "EOF"
-const DATA_CHANNEL_LONG_LOW_BUFFER_TIMEOUT = 1000
 
 interface Header {
     name: string,
     size: number
 }
 
+export enum DataChannelEvent {
+    STATISTICS = "statistics"
+}
+
+export interface Statistics {
+    time: number
+    speed: number
+
+    size: number
+    transferredSize: number
+
+    files: {
+        file: FileDescription
+        transferredSize: number
+    }[]
+}
+
 export class DataChannel extends EventEmitter {
-    private peerConnection: RTCPeerConnection
     private dataChannel: RTCDataChannel
+    private messages = []
 
-    private timeout;
+    private timeout = null;
 
-    constructor(peerConnection: RTCPeerConnection) {
+    private statistics: Statistics = null;
+    private statisticsInterval = null;
+
+    constructor(
+        private peerConnection: RTCPeerConnection
+    ) {
         super();
-        this.peerConnection = peerConnection
+
         this.dataChannel = this.peerConnection
             .createDataChannel(DATA_CHANNEL_LABEL, {
                 id: DATA_CHANNEL_ID,
                 negotiated: true,
             })
+
+        this.setHandlers()
     }
 
     public async send(files: File[]): Promise<boolean> {
         await this.waitOpen()
-        this.setTimeout()
-        this.logChosenCandidate()
 
-        for (let file of files) {
-            let header = JSON.stringify({name: file.name, size: file.size})
+        this.createTimeout()
+        this.createStatistics(files)
 
-            if (!await this.sendData(header)) {
-                return false
+        let result = true
+        for (let i = 0; i < files.length; i++) {
+            let file = files[i]
+
+            if (!await this.sendHeader(file)) {
+                result = false
+                break
             }
 
-            console.log("[WEBRTC]: Sent header", header)
-
-            for (let i = 0; i < file.size;) {
-                let chunk = await file
-                    .slice(i, i + constants.WEBRTC_CHANNEL_CHUNK_SIZE)
-                    .arrayBuffer()
-
-                if (!await this.sendData(chunk)) {
-                    return false
-                }
-
-                console.log("[WEBRTC]: Sent data")
-                i += chunk.byteLength
+            if (!await this.sendBody(file)) {
+                result = false
+                break
             }
 
-            if (!await this.sendData(DATA_CHANNEL_EOF)) {
-                return false
+            if (!await this.sendEOF()) {
+                result = false
+                break
             }
-
-            console.log("[WEBRTC]: Sent EOF")
         }
 
+        this.clearTimeout()
+        this.clearStatistics()
+
+        return result
+    }
+
+    private async sendHeader(file: File): Promise<boolean> {
+        let header = JSON.stringify({name: file.name, size: file.size})
+
+        if (!await this.sendMessage(header)) {
+            return false
+        }
+
+        console.log("[WEBRTC]: Sent header", header)
         return true
     }
 
-    private async sendData(data): Promise<boolean> {
+    private async sendBody(file: File): Promise<boolean> {
+        for (let i = 0; i < file.size;) {
+            let chunk = await file
+                .slice(i, i + constants.WEBRTC_CHANNEL_CHUNK_SIZE)
+                .arrayBuffer()
+
+            if (!await this.sendMessage(chunk)) {
+                return false
+            }
+
+            i += chunk.byteLength
+            this.updateStatistics(file, chunk.byteLength)
+
+            console.log("[WEBRTC]: Sent body chunk")
+        }
+
+        console.log("[WEBRTC]: Sent body")
+        return true
+    }
+
+    private async sendEOF(): Promise<boolean> {
+        if (!await this.sendMessage(DATA_CHANNEL_EOF)) {
+            return false
+        }
+
+        console.log("[WEBRTC]: Sent EOF")
+        return true
+    }
+
+    private async sendMessage(data): Promise<boolean> {
         this.dataChannel.send(data)
 
         await Promise.race([
@@ -144,122 +202,197 @@ export class DataChannel extends EventEmitter {
         ])
 
         if (this.isOpened()) {
-            this.resetTimeout()
+            this.createTimeout()
+            return true
         }
 
-        return this.isOpened()
-    }
-
-    private logChosenCandidate() {
-        this.peerConnection.getStats(null).then(report => {
-            report.forEach(stat => {
-                let remoteId;
-                let localId;
-
-                if (stat.type == "candidate-pair" && stat.nominated) {
-                    remoteId = stat.remoteCandidateId
-                    localId = stat.localCandidateId
-                }
-
-                this.peerConnection.getStats(null).then(report => {
-                    report.forEach(stat => {
-                        if (stat.id == remoteId) {
-                            console.log("[WEBRTC]: Remote candidate", stat)
-                            return
-                        }
-
-                        if (stat.id == localId) {
-                            console.log("[WEBRTC]: Local candidate", stat)
-                            return
-                        }
-                    })
-                })
-
-            })
-        })
+        return false
     }
 
     public async receive(files: FileDescription[]): Promise<boolean> {
         await this.waitOpen()
-        this.setTimeout()
-        this.logChosenCandidate()
 
-        return new Promise<boolean>(resolve => {
-            let index = 0;
+        this.createTimeout()
+        this.createStatistics(files)
 
-            let fd = 0;
-            let receivedHeader: Header = null;
-            let receivedSize = 0;
+        let result = true
+        for (let i = 0; i < files.length; i++) {
+            let file = files[i]
 
-            this.dataChannel.addEventListener("close", () => {
-                resolve(false)
-            })
+            let fd = await this.receiveHeader(file)
+            if (fd < 0) {
+                result = false
+                break
+            }
 
-            this.dataChannel.addEventListener("message", async event => {
-                this.resetTimeout()
+            if (!await this.receiveBody(file, fd)) {
+                result = false
+                break
+            }
 
-                if (receivedHeader == null) {
-                    // We need header
-                    try {
-                        receivedHeader = JSON.parse(event.data)
-                    } catch (e) {
-                        resolve(false)
-                        return
-                    }
+            if (!await this.receiveEOF(fd)) {
+                result = false
+                break
+            }
+        }
 
-                    console.log("[WEBRTC]: Received header", receivedHeader)
+        this.clearTimeout()
+        this.clearStatistics()
 
-                    // Checking that we're receiving valid file
-                    if (receivedHeader.name != files[index].name || receivedHeader.size != files[index].size) {
-                        resolve(false)
-                        return
-                    }
+        return result
+    }
 
-                    // Opening file
-                    fd = await DataChannel.openFile(receivedHeader.name)
+    private async receiveHeader(file: FileDescription): Promise<number> {
+        let message = await this.receiveMessage() as string
+        if (message == null) {
+            return -1
+        }
 
-                } else if (event.data == DATA_CHANNEL_EOF) {
-                    console.log("[WEBRTC]: Received EOF")
+        let header: Header;
+        try {
+            header = JSON.parse(message)
+        } catch (e) {
+            return -1
+        }
 
-                    // Checking that we received full file
-                    if (receivedSize != files[index].size) {
-                        await DataChannel.closeFile(fd)
-                        resolve(false)
+        // Checking that we're receiving valid file
+        if (header.name != file.name || header.size != file.size) {
+            return -1
+        }
 
-                        return
-                    }
+        console.log("[WEBRTC]: Received header", header)
+        return await DataChannel.openFile(header.name)
+    }
 
-                    index += 1
+    private async receiveBody(file: FileDescription, fd: number): Promise<boolean> {
+        let index = 0;
 
-                    // Clearing variables
-                    receivedHeader = null
-                    receivedSize = 0
+        while (index < file.size) {
+            let message = await this.receiveMessage() as ArrayBuffer
+            if (message == null) {
+                break
+            }
 
-                    if (index == files.length) {
-                        await DataChannel.closeFile(fd)
-                        resolve(true)
+            index += message.byteLength
+            this.updateStatistics(file, message.byteLength)
 
-                        this.peerConnection.close()
-                        return
-                    }
+            await DataChannel.writeFile(fd, new Uint8Array(message))
 
-                } else {
-                    let data = event.data as ArrayBuffer
-                    console.log("[WEBRTC]: Receiving data")
+            console.log("[WEBRTC]: Receiving body chunk")
+        }
 
-                    receivedSize += data.byteLength
+        if (index != file.size) {
+            await DataChannel.closeFile(fd)
+            return false
+        }
 
-                    if (receivedSize > files[index].size) {
-                        await DataChannel.closeFile(fd)
-                        resolve(false)
+        console.log("[WEBRTC]: Received body")
+        return true
+    }
 
-                        return
-                    }
+    private async receiveEOF(fd: number): Promise<boolean> {
+        await DataChannel.closeFile(fd)
 
-                    await DataChannel.writeFile(fd, new Uint8Array(data))
-                }
-            })
-        })
+        let message = await this.receiveMessage() as string
+        if (message == null) {
+            return false
+        }
+
+        if (message != DATA_CHANNEL_EOF) {
+            return false
+        }
+
+        console.log("[WEBRTC]: Received EOF")
+        return true
+    }
+
+    private async receiveMessage(): Promise<any> {
+        let result = await Promise.race([
+            this.waitClose(),
+            this.waitMessage(),
+        ])
+
+        if (this.isOpened()) {
+            this.createTimeout()
+            return result
+        }
+
+        return null
+    }
+
+    private createStatistics(files: FileDescription[]) {
+        this.statistics = {
+            time: 0,
+            speed: 0,
+
+            size: files.reduce((size, file) => size + file.size, 0),
+            transferredSize: 0,
+
+            files: files.map(file => ({
+                file,
+                transferredSize: 0,
+            }))
+        }
+
+        if (this.statisticsInterval != null) {
+            clearInterval(this.statisticsInterval)
+        }
+
+        this.statisticsInterval = setInterval(
+            this.handleStatisticsInterval.bind(this),
+            1000
+        )
+    }
+
+    private updateStatistics(file: FileDescription, transferred: number) {
+        this.statistics.speed += transferred
+        this.statistics.transferredSize += transferred
+
+        // Finding file by instance
+        let foundFile = this.statistics.files.find(f => f.file == file)
+
+        foundFile.transferredSize += transferred
+    }
+
+    private clearStatistics() {
+        if (this.statisticsInterval != null) {
+            clearInterval(this.statisticsInterval)
+            this.statisticsInterval = null
+        }
+    }
+
+    private handleStatisticsInterval() {
+        this.statistics.time =
+            (this.statistics.size - this.statistics.transferredSize)
+            / Math.max(this.statistics.speed, 1) // Speed can be 0
+
+        // Emitting event before zeroing speed
+        this.emit(DataChannelEvent.STATISTICS, this.statistics)
+
+        this.statistics.speed = 0
+    }
+
+    private createTimeout() {
+        if (this.timeout != null) {
+            clearTimeout(this.timeout)
+        }
+
+        this.timeout = setTimeout(
+            this.handleTimeout.bind(this),
+            constants.WEBRTC_TIMEOUT
+        )
+    }
+
+    private clearTimeout() {
+        if (this.timeout != null) {
+            clearTimeout(this.timeout)
+            this.timeout = null
+        }
+    }
+
+    private handleTimeout() {
+        console.log("[WEBRTC]: Timeout")
+        this.dataChannel.close()
     }
 
     private isOpened(): boolean {
@@ -286,7 +419,8 @@ export class DataChannel extends EventEmitter {
         }
 
         return new Promise<void>(resolve => {
-            this.dataChannel.addEventListener("close", () => resolve(), {once: true})
+            this.dataChannel
+                .addEventListener("close", () => resolve(), {once: true})
         })
     }
 
@@ -297,22 +431,26 @@ export class DataChannel extends EventEmitter {
         }
 
         return new Promise<void>(resolve => {
-            this.dataChannel.addEventListener("bufferedamountlow", () => resolve(), {once: true})
+            this.dataChannel
+                .addEventListener("bufferedamountlow", () => resolve(), {once: true})
         })
     }
 
-    private setTimeout() {
-        this.timeout = setTimeout(this.handleTimeout.bind(this), constants.WEBRTC_TIMEOUT)
+    private async waitMessage() {
+        if (this.messages.length > 0) {
+            return this.messages.shift()
+        }
+
+        return new Promise<any>(resolve => {
+            this.dataChannel
+                .addEventListener("message", () => resolve(this.messages.shift()), {once: true})
+        })
     }
 
-    private resetTimeout() {
-        clearTimeout(this.timeout)
-        this.setTimeout()
-    }
-
-    private handleTimeout() {
-        console.log("[WEBRTC]: Timeout")
-        this.peerConnection.close()
+    private setHandlers() {
+        this.dataChannel.addEventListener("message", event => {
+            this.messages.push(event.data)
+        })
     }
 
     private static async openFile(name: string): Promise<number> {
@@ -327,3 +465,34 @@ export class DataChannel extends EventEmitter {
         return await window.externalApi.fileStorage.write(fd, data)
     }
 }
+
+// private logChosenCandidate() {
+//     this.peerConnection.getStats(null).then(report => {
+//         report.forEach(stat => {
+//             let remoteId;
+//             let localId;
+//
+//             if (stat.type == "candidate-pair" && stat.nominated) {
+//                 remoteId = stat.remoteCandidateId
+//                 localId = stat.localCandidateId
+//             }
+//
+//             this.peerConnection.getStats(null).then(report => {
+//                 report.forEach(stat => {
+//                     if (stat.id == remoteId) {
+//                         console.log("[WEBRTC]: Remote candidate", stat)
+//                         return
+//                     }
+//
+//                     if (stat.id == localId) {
+//                         console.log("[WEBRTC]: Local candidate", stat)
+//                         return
+//                     }
+//                 })
+//             })
+//
+//         })
+//     })
+// }
+//
+

@@ -1,6 +1,6 @@
-import WebsocketHelper, {DroplyResponse, DroplyUpdate} from "renderer/helpers/WebsocketHelper";
+import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
 import {FullUser, isFullUser, User} from "renderer/repository/UserRepository";
-import {PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
+import {DataChannelEvent, PeerConnection, PeerConnectionEvent, Statistics} from "renderer/helpers/WebrtcHelper";
 import {EventEmitter} from "events";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 import {FileDescription, FileRepository} from "renderer/repository/FileRepository";
@@ -339,7 +339,8 @@ export enum RequestState {
 }
 
 export enum RequestEvent {
-    UPDATE = "update"
+    UPDATE = "update",
+    STATISTICS = "statistics"
 }
 
 export class Request extends EventEmitter {
@@ -355,6 +356,8 @@ export class Request extends EventEmitter {
     constructor(params: Omit<RemoveMethods<Request>, "state">) {
         super()
         Object.assign(this, params)
+
+        this.setHandlers()
     }
 
     public async answer(accept: boolean) {
@@ -416,14 +419,18 @@ export class Request extends EventEmitter {
             })
     }
 
-    private receiveData(data: ArrayBuffer) {
-
-    }
-
     private setState(state: RequestState) {
         if (this.state != state) {
             this.state = state
             this.emit(RequestEvent.UPDATE)
         }
+    }
+
+    private setHandlers() {
+        this.peerConnection.getDataChannel()
+            .on(DataChannelEvent.STATISTICS, (statistics: Statistics) => {
+                console.log("Time:", statistics.time.toFixed(0), "secs, Speed:", statistics.speed / 1024 / 1024, "mb/s, Percentage:", (statistics.transferredSize / statistics.size * 100).toFixed(2))
+                this.emit(RequestEvent.STATISTICS, statistics)
+            })
     }
 }

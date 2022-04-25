@@ -10,14 +10,15 @@ const FOLDER = "droply"
 enum IpcEvent {
     Open = "file-storage:open",
     Write = "file-storage:write",
-    Close = "file-storage:close"
+    Close = "file-storage:close",
+    Remove = "file-storage:remove"
 }
 
 export interface FileStoragePreload {
     open: (name: string) => Promise<number>
-    close: (fd: number) => Promise<void>
-
     write: (fd: number, data: ArrayBufferView) => Promise<void>
+    close: (fd: number) => Promise<void>
+    remove: (name: string) => Promise<void>
 }
 
 export class FileStorage {
@@ -34,13 +35,17 @@ export class FileStorage {
                 return await electron.ipcRenderer.invoke(IpcEvent.Open, name)
             },
 
+            async write(fd: number, data: ArrayBufferView) {
+                return await electron.ipcRenderer.invoke(IpcEvent.Write, fd, data)
+            },
+
             async close(fd: number) {
                 return await electron.ipcRenderer.invoke(IpcEvent.Close, fd)
             },
 
-            async write(fd: number, data: ArrayBufferView) {
-                return await electron.ipcRenderer.invoke(IpcEvent.Write, fd, data)
-            },
+            async remove(name: string) {
+                return await electron.ipcRenderer.invoke(IpcEvent.Remove, name)
+            }
         }
     }
 
@@ -70,6 +75,14 @@ export class FileStorage {
         this.windowManager.handleInvoke(IpcEvent.Close, (fd: number) => {
             return new Promise<void>((resolve, reject) => {
                 fs.close(fd, err => err != null ? reject(err) : resolve())
+            })
+        })
+    }
+
+    private handleRemove(name: string) {
+        this.windowManager.handleInvoke(IpcEvent.Close, () => {
+            return new Promise<void>((resolve, reject) => {
+                fs.unlink(name, err => err != null ? reject(err) : resolve())
             })
         })
     }
