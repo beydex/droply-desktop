@@ -5,8 +5,14 @@ export const WEBRTC_PEER_CONNECTION_CONFIG: RTCConfiguration = {
     iceServers: [
         {
             urls: "stun:stun.l.google.com:19302",
+        },
+        {
+            urls: "turn:51.250.69.216:3478",
+            username: "username",
+            credential: "password"
         }
     ],
+    iceTransportPolicy: "relay"
 }
 
 export const WEBRTC_CHANNEL_CHUNK_SIZE = 1024 * 256

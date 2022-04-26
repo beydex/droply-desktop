@@ -12,10 +12,6 @@ export class FileRepository {
         return this.files
     }
 
-    public dropFiles() {
-        this.files = null
-    }
-
     public async requestFiles() {
         return new Promise<void>(resolve => {
             let element = document.createElement("input")
@@ -38,5 +34,9 @@ export class FileRepository {
 
             element.click()
         })
+    }
+
+    public setFiles(files: File[]) {
+        this.files = files
     }
 }

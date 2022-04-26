@@ -1,16 +1,28 @@
 import React from "react";
 import Styles from "./TransferPerson.module.scss";
 
-import {Request, RequestState} from "renderer/repository/RequestRepository";
+import {Request, RequestRepository, RequestState} from "renderer/repository/RequestRepository";
 
 import {Person} from "renderer/components/pages/main/person/common/Person";
 import BaseHelper from "renderer/helpers/BaseHelper";
+import {useNavigate} from "react-router-dom";
+import {MainPageRouting} from "renderer/components/pages/main/Page";
+import {MetricHelper} from "renderer/helpers/MetricHelper";
 
 interface Props {
     request: Request
 }
 
 export function TransferPerson({request}: Props) {
+    let navigate = useNavigate()
+
+    async function onClick() {
+        RequestRepository.Instance.setCurrentRequest(request.id)
+        navigate(MainPageRouting.Request)
+    }
+
+    let statistics = request.getStatistics()
+
     return (
         <Person
             name={request.user.name}
@@ -71,7 +83,25 @@ export function TransferPerson({request}: Props) {
                 </div>
             }
 
+            action={
+                <>
+                    {
+                        request.state == RequestState.ACTIVE ? (
+                            <div className={Styles.Percentage}>
+                                {
+                                    statistics != null ? MetricHelper.percent(statistics.transferredSize, statistics.size) : 0
+                                }
+                            </div>
+                        ) : (
+                            <></>
+                        )
+                    }
+                </>
+            }
+
             className={Styles.Person}
+
+            onClick={onClick}
         />
     )
 }

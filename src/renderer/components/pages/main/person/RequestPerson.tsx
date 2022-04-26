@@ -3,13 +3,22 @@ import Styles from "./RequestPerson.module.scss";
 
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
-import {Request} from "renderer/repository/RequestRepository";
+import {Request, RequestRepository} from "renderer/repository/RequestRepository";
+import {useNavigate} from "react-router-dom";
+import {MainPageRouting} from "renderer/components/pages/main/Page";
 
 interface Props {
     request: Request
 }
 
 export function RequestPerson({request}: Props) {
+    let navigate = useNavigate()
+
+    async function onClick() {
+        RequestRepository.Instance.setCurrentRequest(request.id)
+        navigate(MainPageRouting.Request)
+    }
+
     async function onAccept() {
         await request.answer(true)
     }
@@ -61,6 +70,8 @@ export function RequestPerson({request}: Props) {
             }
 
             className={Styles.Person}
+
+            onClick={onClick}
         />
     )
 }

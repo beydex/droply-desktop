@@ -50,6 +50,10 @@ export class PeerConnection extends EventEmitter {
         return this.candidates.map(candidate => JSON.stringify(candidate))
     }
 
+    public close() {
+        this.peerConnection.close()
+    }
+
     public async addCandidate(candidate: string) {
         await this.peerConnection.addIceCandidate(JSON.parse(candidate))
     }
@@ -92,20 +96,50 @@ export interface Statistics {
     size: number
     transferredSize: number
 
-    files: {
-        file: FileDescription
-        transferredSize: number
-    }[]
+    files: StatisticsFile[]
+}
+
+export interface StatisticsFile {
+    inner: FileDescription
+    transferredSize: number
+}
+
+function emptyStatistics(files: FileDescription[]): Statistics {
+    return {
+        time: 0,
+        speed: 0,
+
+        size: files.reduce((size, file) => size + file.size, 0),
+        transferredSize: 0,
+
+        files: files.map(file => ({
+            inner: file,
+            transferredSize: 0,
+        }))
+    }
+}
+
+function copyStatistics(old: Statistics): Statistics {
+    return {
+        ...old,
+
+        files: old.files.map(file => ({
+            inner: file.inner,
+            transferredSize: file.transferredSize,
+        }))
+    }
 }
 
 export class DataChannel extends EventEmitter {
     private dataChannel: RTCDataChannel
     private messages = []
 
-    private timeout = null;
+    private timeout = null
 
-    private statistics: Statistics = null;
-    private statisticsInterval = null;
+    private statistics: Statistics = null
+    private statisticsInterval = null
+
+    private stableStatistics: Statistics = null
 
     constructor(
         private peerConnection: RTCPeerConnection
@@ -320,28 +354,15 @@ export class DataChannel extends EventEmitter {
         return null
     }
 
+    public getStatistics() {
+        return this.stableStatistics
+    }
+
     private createStatistics(files: FileDescription[]) {
-        this.statistics = {
-            time: 0,
-            speed: 0,
+        this.statistics = emptyStatistics(files)
+        this.statisticsInterval = setInterval(this.handleStatisticsInterval.bind(this), 1000)
 
-            size: files.reduce((size, file) => size + file.size, 0),
-            transferredSize: 0,
-
-            files: files.map(file => ({
-                file,
-                transferredSize: 0,
-            }))
-        }
-
-        if (this.statisticsInterval != null) {
-            clearInterval(this.statisticsInterval)
-        }
-
-        this.statisticsInterval = setInterval(
-            this.handleStatisticsInterval.bind(this),
-            1000
-        )
+        this.updateStableStatistics()
     }
 
     private updateStatistics(file: FileDescription, transferred: number) {
@@ -349,16 +370,23 @@ export class DataChannel extends EventEmitter {
         this.statistics.transferredSize += transferred
 
         // Finding file by instance
-        let foundFile = this.statistics.files.find(f => f.file == file)
+        let foundFile = this.statistics.files.find(f => f.inner == file)
 
         foundFile.transferredSize += transferred
     }
 
+    private updateStableStatistics() {
+        this.stableStatistics = copyStatistics(this.statistics)
+        this.emit(DataChannelEvent.STATISTICS)
+    }
+
     private clearStatistics() {
-        if (this.statisticsInterval != null) {
-            clearInterval(this.statisticsInterval)
-            this.statisticsInterval = null
-        }
+        clearInterval(this.statisticsInterval)
+
+        this.statistics = null
+        this.statisticsInterval = null
+
+        this.stableStatistics = null
     }
 
     private handleStatisticsInterval() {
@@ -366,8 +394,8 @@ export class DataChannel extends EventEmitter {
             (this.statistics.size - this.statistics.transferredSize)
             / Math.max(this.statistics.speed, 1) // Speed can be 0
 
-        // Emitting event before zeroing speed
-        this.emit(DataChannelEvent.STATISTICS, this.statistics)
+        // Updating stable statistics before zeroing speed
+        this.updateStableStatistics()
 
         this.statistics.speed = 0
     }
@@ -377,22 +405,17 @@ export class DataChannel extends EventEmitter {
             clearTimeout(this.timeout)
         }
 
-        this.timeout = setTimeout(
-            this.handleTimeout.bind(this),
-            constants.WEBRTC_TIMEOUT
-        )
+        this.timeout = setTimeout(this.handleTimeout.bind(this), constants.WEBRTC_TIMEOUT)
     }
 
     private clearTimeout() {
-        if (this.timeout != null) {
-            clearTimeout(this.timeout)
-            this.timeout = null
-        }
+        clearTimeout(this.timeout)
+        this.timeout = null
     }
 
     private handleTimeout() {
         console.log("[WEBRTC]: Timeout")
-        this.dataChannel.close()
+        this.peerConnection.close()
     }
 
     private isOpened(): boolean {

@@ -1,8 +1,16 @@
-.FileDragNDrop {
+@import "~renderer/assets/fonts/icons/style.scss";
+
+@import "~renderer/styles/colors.scss";
+
+.Window {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    user-select: none;
+    height: 100%;
+    width: 100%;
+    outline: none;
 }
 
 .PlaceHolder {
@@ -15,8 +23,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 30px;
-    margin-bottom: 30px;
+    margin-top: 40px;
+    margin-bottom: 40px;
 }
 
 .LabelTop {
@@ -25,11 +33,28 @@
 }
 
 .LabelBottom {
+    margin-top: 10px;
+    color: $hint_color;
     font-size: 20px;
-    color: #818181;
-    font-weight: normal;
+    font-weight: 400;
 }
 
 .Logo {
     height: 420px;
+}
+
+.DragArea {
+    border: 1px solid $border_color;
+    border-radius: 10px;
+    height: 90%;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.DragIcon {
+    font-size: 50px;
+    color: $base_color;
 }

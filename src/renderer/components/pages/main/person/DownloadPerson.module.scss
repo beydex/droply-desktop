@@ -7,9 +7,10 @@
     color: $hint_color;
     display: flex;
     flex-direction: row;
+    align-items: center;
 }
 
-.HintFiles {
+.HintStat {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -17,22 +18,40 @@
     color: $base_color;
 }
 
-.ArrowIcon {
-    font-size: 15px;
-    color: $base_color;
-    margin-left: 4px;
-    margin-right: 4px;
-}
-
 .Speed {
     flex-direction: row;
     display: flex;
     align-items: center;
-    margin-right: 20px;
 }
 
 .Time {
+    margin-left: 10px;
     flex-direction: row;
     display: flex;
     align-items: center;
+}
+
+.TimeIcon {
+    font-size: 15px;
+    color: $base_color;
+}
+
+.ExchangeIcon {
+    font-size: 15px;
+    color: $base_color;
+}
+
+.ArrowIcon {
+    font-size: 15px;
+    color: $base_color;
+}
+
+.DoneIcon {
+    font-size: 15px;
+    color: $accept_color
+}
+
+.ErrorIcon {
+    font-size: 15px;
+    color: $error_color
 }

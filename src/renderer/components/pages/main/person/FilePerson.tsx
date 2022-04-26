@@ -1,37 +1,46 @@
 import React from "react"
 import Styles from "./FilePerson.module.scss";
-
-import BaseHelper from "renderer/helpers/BaseHelper";
 import {Person} from "renderer/components/pages/main/person/common/Person";
+import BaseHelper from "renderer/helpers/BaseHelper";
+import {FileDescription} from "renderer/repository/FileRepository";
+import {MetricHelper} from "renderer/helpers/MetricHelper";
 
 interface Props {
-    name: string,
-    avatar: string,
-    size: number,
-    filesCount: number,
-    percent: number,
+    file: FileDescription
+    transferredSize: number
 }
 
-export function FilePerson({name, avatar, size, filesCount, percent}: Props) {
+function formatSize(size: number) {
+    return `${(size / 1024 / 1024).toFixed(1)} Mb`
+}
+
+export function FilePerson({file, transferredSize}: Props) {
     return (
         <Person
-            name={name}
-            avatar={avatar}
-            hint={
-                <div className={Styles.Hint}>
-                    <span className={Styles.HintFiles}>
-                        {size} Mb
+            name={file.name}
+            avatar={
+                <div className={Styles.File}>
+                    <span className={BaseHelper.classes(Styles.FileIcon, Styles.MaterialIcon)}>
+                        folder
                     </span>
-                    &nbsp;&nbsp;
-                    {filesCount} files
                 </div>
             }
+
+            hint={
+                <div className={Styles.Hint}>
+                    {
+                        transferredSize != 0 ? <>{MetricHelper.formatSize(transferredSize)}&nbsp;/&nbsp;</> : <></>
+                    }
+                    {MetricHelper.formatSize(file.size)}
+                </div>
+            }
+
             action={
-                <>
-                    <div className={Styles.Percent}>
-                        {percent + '%'}
-                    </div>
-                </>
+                <div className={Styles.Percentage}>
+                    {
+                        transferredSize != 0 ? MetricHelper.percent(transferredSize, file.size) : <></>
+                    }
+                </div>
             }
             className={Styles.Person}
         />

@@ -1,6 +1,6 @@
 import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper";
 import {FullUser, isFullUser, User} from "renderer/repository/UserRepository";
-import {DataChannelEvent, PeerConnection, PeerConnectionEvent, Statistics} from "renderer/helpers/WebrtcHelper";
+import {DataChannelEvent, PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
 import {EventEmitter} from "events";
 import {AuthRepository} from "renderer/repository/AuthRepository";
 import {FileDescription, FileRepository} from "renderer/repository/FileRepository";
@@ -121,17 +121,33 @@ interface RequestSignalUpdate {
 }
 
 export enum RequestRepositoryEvent {
-    UPDATE = "update"
+    UPDATE = "update",
+    CURRENT_REQUEST_UPDATE = "current-request-update"
 }
 
 export class RequestRepository extends EventEmitter {
     public static Instance = new RequestRepository();
 
     private requests: { [id: string]: Request } = {}
+    private currentRequest: Request
 
     constructor() {
         super()
         this.setHandlers()
+    }
+
+    public setCurrentRequest(id: number) {
+        let request = this.requests[id]
+        if (request == null) {
+            return
+        }
+
+        this.currentRequest = request
+        this.emit(RequestRepositoryEvent.CURRENT_REQUEST_UPDATE)
+    }
+
+    public getCurrentRequest(): Request {
+        return this.currentRequest
     }
 
     public async createRequest(user: FullUser | User): Promise<boolean> {
@@ -298,8 +314,15 @@ export class RequestRepository extends EventEmitter {
     }
 
     private deleteRequest(id: number) {
-        delete this.requests[id]
+        let request = this.requests[id]
+        if (request == null) {
+            return
+        }
 
+        // Close everything
+        request.peerConnection.close()
+
+        delete this.requests[id]
         this.emit(RequestRepositoryEvent.UPDATE)
     }
 
@@ -339,19 +362,17 @@ export enum RequestState {
 }
 
 export enum RequestEvent {
-    UPDATE = "update",
-    STATISTICS = "statistics"
+    UPDATE = "update"
 }
 
 export class Request extends EventEmitter {
     public id: number
     public outgoing: boolean
-
     public user: User
     public files: File[] | FileDescription[]
+    public peerConnection: PeerConnection
 
     public state = RequestState.CREATED
-    public peerConnection: PeerConnection
 
     constructor(params: Omit<RemoveMethods<Request>, "state">) {
         super()
@@ -407,6 +428,10 @@ export class Request extends EventEmitter {
         }
     }
 
+    public getStatistics() {
+        return this.peerConnection.getDataChannel().getStatistics()
+    }
+
     private sendCandidates() {
         this.peerConnection
             .on(PeerConnectionEvent.CANDIDATE, async candidate => {
@@ -428,9 +453,8 @@ export class Request extends EventEmitter {
 
     private setHandlers() {
         this.peerConnection.getDataChannel()
-            .on(DataChannelEvent.STATISTICS, (statistics: Statistics) => {
-                console.log("Time:", statistics.time.toFixed(0), "secs, Speed:", statistics.speed / 1024 / 1024, "mb/s, Percentage:", (statistics.transferredSize / statistics.size * 100).toFixed(2))
-                this.emit(RequestEvent.STATISTICS, statistics)
+            .on(DataChannelEvent.STATISTICS, () => {
+                this.emit(RequestEvent.UPDATE)
             })
     }
 }

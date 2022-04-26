@@ -1,9 +1,8 @@
+@import "~renderer/styles/colors.scss";
+
 .Button {
-    width: 215px;
-    height: 56px;
     border-radius: 10px;
-    background-color: #FF1744;
-    color: white;
+    color: $reject_color;
     display: flex;
     justify-content: center;
     align-items: center;

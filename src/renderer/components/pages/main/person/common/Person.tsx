@@ -5,7 +5,7 @@ import BaseHelper from 'renderer/helpers/BaseHelper'
 
 interface Props {
     name: string,
-    avatar: string,
+    avatar: string | React.ReactNode,
 
     hint?: React.ReactNode,
     action?: React.ReactNode,
@@ -18,10 +18,17 @@ interface Props {
 export function Person({name, avatar, hint, action, className, onClick}: Props) {
     return (
         <div className={BaseHelper.classes(Styles.Person, className)}>
-            <img alt=""
-                 className={Styles.Avatar}
-                 src={avatar}
-                 onClick={() => onClick?.()}/>
+            {
+                typeof avatar == "string" ? (
+                    <img alt=""
+                         className={Styles.Avatar}
+                         src={avatar}
+                         onClick={() => onClick?.()}
+                         draggable={false}/>
+                ) : (
+                    avatar
+                )
+            }
 
             <div className={Styles.Info}
                  onClick={() => onClick?.()}>

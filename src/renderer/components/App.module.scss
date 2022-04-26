@@ -1,4 +1,5 @@
 @import "~renderer/assets/fonts/poppins/style.scss";
+@import "~renderer/assets/fonts/roboto/style.scss";
 
 body {
     margin: 0;
@@ -6,5 +7,5 @@ body {
 
 .App {
     //noinspection CssNoGenericFontName
-    font-family: "Poppins";
+    font-family: "Poppins", "Roboto";
 }

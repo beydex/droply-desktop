@@ -4,6 +4,7 @@
 
 .Person {
     margin-top: 10px;
+    cursor: pointer;
 }
 
 .Hint {
@@ -35,4 +36,10 @@
 .ErrorIcon {
     font-size: 15px;
     color: $error_color
+}
+
+.Percentage {
+    font-size: 16px;
+    font-weight: 600;
+    color: $base_color;
 }
