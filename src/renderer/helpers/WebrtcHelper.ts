@@ -158,6 +158,7 @@ export class DataChannel extends EventEmitter {
     public async send(files: File[]): Promise<boolean> {
         await this.waitOpen()
 
+        this.logChosenCandidate()
         this.createTimeout()
         this.createStatistics(files)
 
@@ -246,6 +247,7 @@ export class DataChannel extends EventEmitter {
     public async receive(files: FileDescription[]): Promise<boolean> {
         await this.waitOpen()
 
+        this.logChosenCandidate()
         this.createTimeout()
         this.createStatistics(files)
 
@@ -476,6 +478,35 @@ export class DataChannel extends EventEmitter {
         })
     }
 
+    private logChosenCandidate() {
+        this.peerConnection.getStats(null).then(report => {
+            report.forEach(stat => {
+                let remoteId;
+                let localId;
+
+                if (stat.type == "candidate-pair" && stat.nominated) {
+                    remoteId = stat.remoteCandidateId
+                    localId = stat.localCandidateId
+                }
+
+                this.peerConnection.getStats(null).then(report => {
+                    report.forEach(stat => {
+                        if (stat.id == remoteId) {
+                            console.log("[WEBRTC]: Remote candidate", stat)
+                            return
+                        }
+
+                        if (stat.id == localId) {
+                            console.log("[WEBRTC]: Local candidate", stat)
+                            return
+                        }
+                    })
+                })
+
+            })
+        })
+    }
+
     private static async openFile(name: string): Promise<number> {
         return await window.externalApi.fileStorage.open(name)
     }
@@ -488,34 +519,4 @@ export class DataChannel extends EventEmitter {
         return await window.externalApi.fileStorage.write(fd, data)
     }
 }
-
-// private logChosenCandidate() {
-//     this.peerConnection.getStats(null).then(report => {
-//         report.forEach(stat => {
-//             let remoteId;
-//             let localId;
-//
-//             if (stat.type == "candidate-pair" && stat.nominated) {
-//                 remoteId = stat.remoteCandidateId
-//                 localId = stat.localCandidateId
-//             }
-//
-//             this.peerConnection.getStats(null).then(report => {
-//                 report.forEach(stat => {
-//                     if (stat.id == remoteId) {
-//                         console.log("[WEBRTC]: Remote candidate", stat)
-//                         return
-//                     }
-//
-//                     if (stat.id == localId) {
-//                         console.log("[WEBRTC]: Local candidate", stat)
-//                         return
-//                     }
-//                 })
-//             })
-//
-//         })
-//     })
-// }
-//
 

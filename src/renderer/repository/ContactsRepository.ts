@@ -34,20 +34,14 @@ export interface Contact {
     lastSuccessRequestDate: string
 }
 
-export enum ContactRepositoryEvent {
+export enum ContactsRepositoryEvent {
     UPDATE = "update"
 }
 
 export class ContactsRepository extends EventEmitter {
     public static Instance = new ContactsRepository()
 
-    private contacts: Contact[]
-
     public async listContacts(): Promise<Contact[]> {
-        if (this.contacts != null) {
-            return this.contacts
-        }
-
         await AuthRepository.Instance.waitAuth()
 
         let response = await WebsocketHelper.Instance
@@ -56,11 +50,7 @@ export class ContactsRepository extends EventEmitter {
                 request: {}
             })
 
-        if (response.success) {
-            this.updateContacts(response.entries)
-        }
-
-        return this.contacts
+        return response.entries
     }
 
     public async deleteContact(userId: number): Promise<boolean> {
@@ -74,15 +64,7 @@ export class ContactsRepository extends EventEmitter {
                 }
             })
 
-        if (response.success) {
-            this.updateContacts(response.entries)
-        }
-
+        this.emit(ContactsRepositoryEvent.UPDATE)
         return response.success
-    }
-
-    private updateContacts(contacts: Contact[]) {
-        this.contacts = contacts
-        this.emit(ContactRepositoryEvent.UPDATE)
     }
 }

@@ -6,11 +6,6 @@ export const WEBRTC_PEER_CONNECTION_CONFIG: RTCConfiguration = {
         {
             urls: "stun:stun.l.google.com:19302",
         },
-        {
-            urls: "turn:51.250.69.216:3478",
-            username: "username",
-            credential: "password"
-        }
     ],
 }
 
