@@ -2,8 +2,13 @@ appId: com.beydex.droply,
 directories:
   output: dist/electron
 
+win:
+  icon: ./assets/icon.ico
+
+mac:
+  icon: ./assets/icon.icns
+
 linux:
-  icon: ./assets/icon256x256.png
   category: Utility
   maintainer: Beydex Team <beydexteam@gmail.com>
   description: Desktop client for droply project
@@ -12,4 +17,5 @@ linux:
   desktop:
     exec: droply-desktop %u
   target:
+    - deb
     - pacman

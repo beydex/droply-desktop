@@ -13,7 +13,7 @@
     "electron:build": "electron-builder",
     "electron:serve": "electron .",
     "package": "run-s webpack:build:production electron:build",
-    "install:linux": "sudo pacman -U dist/electron/droply-desktop-1.0.0.pacman"
+    "install:linux:arch": "sudo pacman -U dist/electron/droply-desktop-1.0.0.pacman"
   },
   "dependencies": {
     "electron-deeplink": "^1.0.9",
