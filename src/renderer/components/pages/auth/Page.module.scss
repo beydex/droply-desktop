@@ -1,4 +1,5 @@
 @import "~renderer/styles/base.scss";
+@import "~renderer/styles/colors.scss";
 
 .Copyright {
     position: absolute;
@@ -8,5 +9,5 @@
     font-weight: 300;
     font-size: 18px;
 
-    color: #CECECE;
+    color: $mute_color;
 }

@@ -1,0 +1,10 @@
+@import "~renderer/styles/colors.scss";
+@import "~renderer/styles/utils.scss";
+
+.Mute {
+    position: absolute;
+    bottom: 20px;
+    right: 30px;
+    color: $mute_color;
+    font-size: 16px;
+}

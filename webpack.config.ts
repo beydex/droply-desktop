@@ -1,10 +1,11 @@
 import path from "path";
 
-import webpack from "webpack";
+import * as webpack from "webpack";
 import "webpack-dev-server"
 
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import Shell from "shelljs";
 
 interface Environment {
     production: boolean
@@ -124,8 +125,14 @@ function rendererConfig(env: Environment): webpack.Configuration {
         },
 
         function pluginsConfig() {
+            let version = Shell.exec('git log --pretty=format:%h -n 1')
+
             return {
                 plugins: [
+                    new webpack.DefinePlugin({
+                        "process.env.DROPLY_VERSION": `"git:${version}"`
+                    }),
+
                     new MiniCssExtractPlugin(),
 
                     new HtmlWebpackPlugin({

@@ -8,6 +8,8 @@ import {RequestsCard} from './sidebar/RequestsCard';
 import {TransfersCard} from './sidebar/TransfersCard';
 import {Logo} from "renderer/components/Logo";
 
+import {VersionText} from './VersionText';
+
 import {Window as FileWindow} from "renderer/components/pages/main/workspace/file_window/Window";
 import {Window as RecipientWindow} from "renderer/components/pages/main/workspace/recipent_window/Window";
 import {Window as RequestWindow} from "renderer/components/pages/main/workspace/request_window/Window";
@@ -73,13 +75,9 @@ export function Page() {
                         <Route path={MainPageRouting.Request} element={<RequestWindow/>}/>
                     </Routes>
                 </div>
+
+                <VersionText/>
             </div>
         </div>
     )
 }
-
-/*
-<div className={BaseHelper.classes(Styles.Workspace)}>
-                    <Window/>
-                </div>
-*/
