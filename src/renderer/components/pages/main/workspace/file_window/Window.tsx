@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import Styles from './Window.module.scss';
 import {FileRepository} from "renderer/repository/FileRepository";
 import {useNavigate} from "react-router-dom";
@@ -13,6 +13,15 @@ export function Window() {
     let navigate = useNavigate();
     let {getRootProps, getInputProps, isDragActive} = useDropzone({onDrop: onDragNDrop})
 
+    async function onPaste(event: ClipboardEvent) {
+        const clipboardFiles = event.clipboardData.files
+        if (clipboardFiles.length <= 0) {
+            return
+        }
+
+        await onDragNDrop([...clipboardFiles])
+    }
+
     async function onDragNDrop(files: File[]) {
         FileRepository.Instance.setFiles(files)
         navigate(MainPageRouting.Recipient)
@@ -22,6 +31,11 @@ export function Window() {
         await FileRepository.Instance.requestFiles()
         navigate(MainPageRouting.Recipient)
     }
+
+    useEffect(() => {
+        window.addEventListener("paste", onPaste);
+        return () => window.removeEventListener("paste", onPaste);
+    }, []);
 
     return (
         <div className={Styles.Window}
