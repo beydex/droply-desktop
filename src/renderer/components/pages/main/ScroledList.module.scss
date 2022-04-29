@@ -1,0 +1,8 @@
+.ScroledList {
+    margin: 0 auto;
+    overflow: auto;
+}
+
+.ScroledList::-webkit-scrollbar {
+    display: none;
+}
