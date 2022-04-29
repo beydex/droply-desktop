@@ -2,7 +2,7 @@ import React from "react"
 import Styles from "./ScroledList.module.scss"
 
 interface Props {
-    maxHeight: number
+    maxHeight?: number
     minHeight?: number
     children: React.ReactNode
 }
@@ -10,7 +10,9 @@ interface Props {
 export function ScroledList({children, maxHeight, minHeight}: Props) {
 
     let style = {}
-    style['maxHeight'] = maxHeight + 'px';
+    if (maxHeight !== null && maxHeight !== undefined) {
+        style['maxHeight'] = maxHeight + 'px';
+    }
     if (minHeight !== null && minHeight !== undefined) {
         style['minHeight'] = minHeight + 'px'
     }

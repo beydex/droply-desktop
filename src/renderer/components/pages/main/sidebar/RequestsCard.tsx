@@ -24,16 +24,14 @@ export function RequestsCard() {
             name="Requests"
             description="Pending file transfer requests"
         >
-            <ScroledList maxHeight={300}>
-                {
-                    requests.length > 0
-                        ? requests.map(request =>
-                            <RequestPerson key={request.id}
-                                           request={request}/>
-                        )
-                        : <Empty/>
-                }
-            </ScroledList>
+            {
+                requests.length > 0
+                    ? requests.map(request =>
+                        <RequestPerson key={request.id}
+                                        request={request}/>
+                    )
+                    : <Empty/>
+            }
         </Card>
     )
 }

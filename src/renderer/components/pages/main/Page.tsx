@@ -16,6 +16,7 @@ import {Window as RequestWindow} from "renderer/components/pages/main/workspace/
 
 import {Route, Routes} from "react-router-dom";
 import gsap from "gsap";
+import { ScroledList } from './ScroledList';
 
 const ANIMATION_DELAY = 1000
 
@@ -60,11 +61,13 @@ export function Page() {
 
             <div ref={contentRef} className={Styles.Container}>
                 <div className={BaseHelper.classes(Styles.Sidebar)}>
-                    <AccountCard/>
-                    <CodeCard/>
+                    <ScroledList maxHeight={800}>
+                        <AccountCard/>
+                        <CodeCard/>
 
-                    <RequestsCard/>
-                    <TransfersCard/>
+                        <RequestsCard/>
+                        <TransfersCard/>
+                    </ScroledList>
                 </div>
 
 
