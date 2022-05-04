@@ -17,6 +17,8 @@ import {Window as RequestWindow} from "renderer/components/pages/main/workspace/
 import {Route, Routes} from "react-router-dom";
 import gsap from "gsap";
 import { ScroledList } from './ScroledList';
+import { RequestChange, RequestRepository, RequestRepositoryEvent, RequestState } from 'renderer/repository/RequestRepository';
+import { Request as RepoRequest } from 'renderer/repository/RequestRepository';
 
 const ANIMATION_DELAY = 1000
 
@@ -31,6 +33,43 @@ export function Page() {
 
     useEffect(() => {
         setTimeout(runAnimation, ANIMATION_DELAY)
+    }, [])
+
+    useEffect(() => {
+        let callback = (request: RepoRequest, change: RequestChange) => {
+            if (!document.hasFocus()) {
+                return;
+            }
+            let notification;
+            switch (change) {
+                case RequestChange.ADDED:
+                    if (!request.outgoing) {
+                        notification = new Notification(`New request from ${request.user.name} that contains ${request.files.length} file(s)`);
+                    }
+                    break;
+                case RequestChange.ACCEPTED:
+                    if (request.outgoing) {
+                        notification = new Notification(`${request.user.name} accepted your request`);
+                    }
+                    break;
+                case RequestChange.DELETED:
+                    if (request.outgoing) {
+                        if (request.state = RequestState.ACTIVE) {
+                            notification = new Notification(`${request.user.name} cancelled your transfer`);
+                        } else {
+                            notification = new Notification(`${request.user.name} rejected your request`);
+                        }
+                    }
+                    break;
+                case RequestChange.ENDED:
+                    notification = new Notification(`Transaction successfuly ended`);
+                    break;
+            }
+        }
+        RequestRepository.Instance.on(RequestRepositoryEvent.UPDATE, callback);
+        return function() {
+            RequestRepository.Instance.off(RequestRepositoryEvent.UPDATE, callback);     
+        }
     }, [])
 
     function runAnimation() {

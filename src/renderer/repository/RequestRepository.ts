@@ -213,11 +213,14 @@ export class RequestRepository extends EventEmitter {
 
         if (response.success && accept) {
             // Starting transfer in background
+            this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ACCEPTED);
             request.transfer().then()
         } else {
             this.deleteRequest(request.id)
 
-            if (!response.success) {
+            if (response.success) {
+                this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.DECLINED);
+            } else {
                 alert("Failed to answer request")
             }
         }
@@ -310,7 +313,7 @@ export class RequestRepository extends EventEmitter {
         this.requests[request.id] = request
 
         this.setRequestHandlers(request)
-        this.emit(RequestRepositoryEvent.UPDATE)
+        this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ADDED);
     }
 
     private deleteRequest(id: number) {
@@ -323,12 +326,15 @@ export class RequestRepository extends EventEmitter {
         request.peerConnection.close()
 
         delete this.requests[id]
-        this.emit(RequestRepositoryEvent.UPDATE)
+        this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.DELETED)
     }
 
     private setRequestHandlers(request: Request) {
         request.on(RequestEvent.UPDATE, () => {
             this.emit(RequestRepositoryEvent.UPDATE)
+            if (RequestState.DONE == request.state) {
+                this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ENDED)
+            }
 
             if ([RequestState.DONE, RequestState.ERROR].includes(request.state)) {
                 setTimeout(
@@ -359,6 +365,14 @@ export enum RequestState {
     ACTIVE,
     DONE,
     ERROR
+}
+
+export enum RequestChange {
+    ADDED,
+    DELETED,
+    ACCEPTED,
+    DECLINED,
+    ENDED,
 }
 
 export enum RequestEvent {
