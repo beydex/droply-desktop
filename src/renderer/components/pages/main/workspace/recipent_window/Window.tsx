@@ -2,7 +2,6 @@ import React from 'react'
 import Styles from './Window.module.scss'
 import BaseHelper from "renderer/helpers/BaseHelper";
 import {SearchSection} from "renderer/components/pages/main/workspace/recipent_window/SearchSection";
-import {LocalSection} from "renderer/components/pages/main/workspace/recipent_window/LocalSection";
 import {HistorySection} from "renderer/components/pages/main/workspace/recipent_window/HistorySection";
 import {useNavigate} from "react-router-dom";
 
@@ -29,7 +28,6 @@ export function Window() {
             </div>
 
             <SearchSection/>
-            <LocalSection/>
             <HistorySection/>
         </div>
     )
