@@ -2,7 +2,7 @@ import WebsocketHelper, {DroplyResponse} from "renderer/helpers/WebsocketHelper"
 import {FullUser, isFullUser, User} from "renderer/repository/UserRepository";
 import {DataChannelEvent, PeerConnection, PeerConnectionEvent} from "renderer/helpers/WebrtcHelper";
 import {EventEmitter} from "events";
-import {AuthRepository} from "renderer/repository/AuthRepository";
+import {AuthRepository, AuthRepositoryEvent} from "renderer/repository/AuthRepository";
 import {FileDescription, FileRepository} from "renderer/repository/FileRepository";
 import {RemoveMethods} from "renderer/types";
 
@@ -351,6 +351,11 @@ export class RequestRepository extends EventEmitter {
     }
 
     private setHandlers() {
+        AuthRepository.Instance
+            .on(AuthRepositoryEvent.LOGOUT, () => {
+                this.requests = {};
+            })
+
         WebsocketHelper.Instance
             .on(REQUEST_RECEIVED_UPDATE_TYPE, this.handleRequest.bind(this))
 
