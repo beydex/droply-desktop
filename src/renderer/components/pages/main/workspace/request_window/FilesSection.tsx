@@ -3,7 +3,7 @@ import Styles from './FilesSection.module.scss'
 import {Request} from "renderer/repository/RequestRepository";
 import {FilePerson} from "renderer/components/pages/main/person/FilePerson";
 import {Section} from "renderer/components/pages/main/workspace/request_window/common/Section";
-import { ScroledList } from '../../ScroledList';
+import { ScrolledList } from '../../ScrolledList';
 
 interface Props {
     request: Request
@@ -15,7 +15,7 @@ export function FilesSection({request}: Props) {
     return (
         <Section title="Files" hint={`Total ${request.files.length} file(s)`}>
             <div className={Styles.List}>
-                <ScroledList maxHeight={500} minHeight={150}>
+                <ScrolledList maxHeight={40} minHeight={10}>
                     {
                         statistics == null ? (
                             request.files.map((file, index) =>
@@ -25,7 +25,7 @@ export function FilesSection({request}: Props) {
                                 <FilePerson key={index} file={file.inner} transferredSize={file.transferredSize}/>)
                         )
                     }
-                </ScroledList>
+                </ScrolledList>
             </div>
         </Section>
     )

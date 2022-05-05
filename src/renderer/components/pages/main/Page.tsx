@@ -16,11 +16,42 @@ import {Window as RequestWindow} from "renderer/components/pages/main/workspace/
 
 import {Route, Routes} from "react-router-dom";
 import gsap from "gsap";
-import { ScroledList } from './ScroledList';
+import { ScrolledList } from './ScrolledList';
 import { RequestChange, RequestRepository, RequestRepositoryEvent, RequestState } from 'renderer/repository/RequestRepository';
 import { Request as RepoRequest } from 'renderer/repository/RequestRepository';
 
 const ANIMATION_DELAY = 1000
+
+function makeNotification(request: RepoRequest, change: RequestChange) {
+    if (!document.hasFocus()) {
+        return;
+    }
+    let notification;
+    switch (change) {
+        case RequestChange.ADDED:
+            if (!request.outgoing) {
+                notification = new Notification(`New request from ${request.user.name} that contains ${request.files.length} file(s)`);
+            }
+            break;
+        case RequestChange.ACCEPTED:
+            if (request.outgoing) {
+                notification = new Notification(`${request.user.name} accepted your request`);
+            }
+            break;
+        case RequestChange.DELETED:
+            if (request.outgoing) {
+                if (request.state = RequestState.ACTIVE) {
+                    notification = new Notification(`${request.user.name} cancelled your transfer`);
+                } else {
+                    notification = new Notification(`${request.user.name} rejected your request`);
+                }
+            }
+            break;
+        case RequestChange.ENDED:
+            notification = new Notification(`Transaction successfuly ended`);
+            break;
+    }
+}
 
 export class MainPageRouting {
     public static Recipient = "recipient"
@@ -36,39 +67,9 @@ export function Page() {
     }, [])
 
     useEffect(() => {
-        let callback = (request: RepoRequest, change: RequestChange) => {
-            if (!document.hasFocus()) {
-                return;
-            }
-            let notification;
-            switch (change) {
-                case RequestChange.ADDED:
-                    if (!request.outgoing) {
-                        notification = new Notification(`New request from ${request.user.name} that contains ${request.files.length} file(s)`);
-                    }
-                    break;
-                case RequestChange.ACCEPTED:
-                    if (request.outgoing) {
-                        notification = new Notification(`${request.user.name} accepted your request`);
-                    }
-                    break;
-                case RequestChange.DELETED:
-                    if (request.outgoing) {
-                        if (request.state = RequestState.ACTIVE) {
-                            notification = new Notification(`${request.user.name} cancelled your transfer`);
-                        } else {
-                            notification = new Notification(`${request.user.name} rejected your request`);
-                        }
-                    }
-                    break;
-                case RequestChange.ENDED:
-                    notification = new Notification(`Transaction successfuly ended`);
-                    break;
-            }
-        }
-        RequestRepository.Instance.on(RequestRepositoryEvent.UPDATE, callback);
+        RequestRepository.Instance.on(RequestRepositoryEvent.NOTIFICATION, makeNotification);
         return function() {
-            RequestRepository.Instance.off(RequestRepositoryEvent.UPDATE, callback);     
+            RequestRepository.Instance.off(RequestRepositoryEvent.NOTIFICATION, makeNotification);     
         }
     }, [])
 
@@ -100,13 +101,13 @@ export function Page() {
 
             <div ref={contentRef} className={Styles.Container}>
                 <div className={BaseHelper.classes(Styles.Sidebar)}>
-                    <ScroledList maxHeight={800}>
+                    <ScrolledList maxHeight={90}>
                         <AccountCard/>
                         <CodeCard/>
 
                         <RequestsCard/>
                         <TransfersCard/>
-                    </ScroledList>
+                    </ScrolledList>
                 </div>
 
 

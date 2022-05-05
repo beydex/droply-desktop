@@ -122,7 +122,8 @@ interface RequestSignalUpdate {
 
 export enum RequestRepositoryEvent {
     UPDATE = "update",
-    CURRENT_REQUEST_UPDATE = "current-request-update"
+    CURRENT_REQUEST_UPDATE = "current-request-update",
+    NOTIFICATION = "notification",
 }
 
 export class RequestRepository extends EventEmitter {
@@ -213,14 +214,13 @@ export class RequestRepository extends EventEmitter {
 
         if (response.success && accept) {
             // Starting transfer in background
-            this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ACCEPTED);
+            this.emit(RequestRepositoryEvent.UPDATE);
+            this.emit(RequestRepositoryEvent.NOTIFICATION, request, RequestChange.ACCEPTED);
             request.transfer().then()
         } else {
             this.deleteRequest(request.id)
 
-            if (response.success) {
-                this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.DECLINED);
-            } else {
+            if (!response.success) {
                 alert("Failed to answer request")
             }
         }
@@ -313,7 +313,9 @@ export class RequestRepository extends EventEmitter {
         this.requests[request.id] = request
 
         this.setRequestHandlers(request)
-        this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ADDED);
+        this.emit(RequestRepositoryEvent.UPDATE)
+        this.emit(RequestRepositoryEvent.NOTIFICATION, request, RequestChange.ADDED)
+
     }
 
     private deleteRequest(id: number) {
@@ -326,14 +328,16 @@ export class RequestRepository extends EventEmitter {
         request.peerConnection.close()
 
         delete this.requests[id]
-        this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.DELETED)
+        this.emit(RequestRepositoryEvent.UPDATE)
+        this.emit(RequestRepositoryEvent.NOTIFICATION, request, RequestChange.DELETED)
+
     }
 
     private setRequestHandlers(request: Request) {
         request.on(RequestEvent.UPDATE, () => {
             this.emit(RequestRepositoryEvent.UPDATE)
             if (RequestState.DONE == request.state) {
-                this.emit(RequestRepositoryEvent.UPDATE, request, RequestChange.ENDED)
+                this.emit(RequestRepositoryEvent.NOTIFICATION, request, RequestChange.ENDED)
             }
 
             if ([RequestState.DONE, RequestState.ERROR].includes(request.state)) {
@@ -364,7 +368,7 @@ export enum RequestState {
     EXCHANGING,
     ACTIVE,
     DONE,
-    ERROR
+    ERROR,
 }
 
 export enum RequestChange {

@@ -3,7 +3,6 @@ import React, {useEffect, useState} from 'react';
 import {RequestPerson} from "renderer/components/pages/main/person/RequestPerson";
 import {Request, RequestRepository, RequestRepositoryEvent, RequestState} from "renderer/repository/RequestRepository";
 import {Empty} from "renderer/components/pages/main/sidebar/common/Empty";
-import { ScroledList } from '../ScroledList';
 
 export function RequestsCard() {
     let [requests, setRequests] = useState<Request[]>([])
