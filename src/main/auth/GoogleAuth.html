@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300,400;700&family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+  <title>Droply Authentication</title>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #success {
+      display: none;
+    }
+
+    .success {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .image {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      height: 150px;
+      width: 150px;
+    }
+
+    .text {
+      font-family: "Poppins", sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .hint {
+      margin-top: 20px;
+      color: #818181;
+      font-family: "Poppins", sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+    }
+
+    .copyright {
+      position: absolute;
+      right: 30px;
+      bottom: 30px;
+      font-family: "Poppins", sans-serif;
+      font-weight: 300;
+      font-size: 18px;
+      color: #CECECE;
+    }
+  </style>
+</head>
+<body>
+<div id="success" class="success">
+  <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDI2LjAuMCwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCA1MDAgNTAwIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCA1MDAgNTAwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+CjxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+Cgkuc3Qwe2ZpbGw6I0ZGRkZGRjt9Cgkuc3Qxe2ZpbGw6dXJsKCNTVkdJRF8xXyk7fQoJLnN0MntmaWxsOnVybCgjU1ZHSURfMDAwMDAxNzc0NjQwNzk4NTI3MjIxMjY0ODAwMDAwMDkzODIwNDczMTM0ODA0NDQ4MjlfKTt9Cgkuc3Qze29wYWNpdHk6MC4yO2NsaXAtcGF0aDp1cmwoI1NWR0lEXzAwMDAwMTIzNDAxNjMyMjEyNzA0NDMyODkwMDAwMDE2MjQxOTA0NzQ0OTgyMDI3NDQzXyk7ZmlsbDojRkZGRkZGO30KCS5zdDR7b3BhY2l0eTowLjI7Y2xpcC1wYXRoOnVybCgjU1ZHSURfMDAwMDAxNjgwNzUxMzY1NTI2MzcyNjY1MTAwMDAwMDExNjQxNTY5NTI0ODU0MDEyMzZfKTtmaWxsOiNGRkZGRkY7fQo8L3N0eWxlPgo8cmVjdCBjbGFzcz0ic3QwIiB3aWR0aD0iNTAwIiBoZWlnaHQ9IjUwMCIvPgo8Zz4KCTxnPgoJCTxsaW5lYXJHcmFkaWVudCBpZD0iU1ZHSURfMV8iIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMTI4LjY4MjciIHkxPSIxODAuMTgwMiIgeDI9IjI0MS44MTk4IiB5Mj0iMjkzLjMxNzMiPgoJCQk8c3RvcCAgb2Zmc2V0PSIwIiBzdHlsZT0ic3RvcC1jb2xvcjojMDBCMEZGIi8+CgkJCTxzdG9wICBvZmZzZXQ9IjEiIHN0eWxlPSJzdG9wLWNvbG9yOiMyOTc5RkYiLz4KCQk8L2xpbmVhckdyYWRpZW50PgoJCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik0yMzAsMTIyaC0yMGMtNS41MiwwLTEwLDQuNDgtMTAsMTB2NjAuNzFjLTMwLjYtMTcuNjktNzAuMzktMTMuNDYtOTYuNTcsMTIuNzIKCQkJYy0zMS4yNCwzMS4yNC0zMS4yNCw4MS45LDAsMTEzLjE0YzMxLjI0LDMxLjI0LDgxLjksMzEuMjQsMTEzLjE0LDBDMjMyLjE5LDMwMi45NSwyNDAsMjgyLjQ3LDI0MCwyNjJWMTMyCgkJCUMyNDAsMTI2LjQ4LDIzNS41MiwxMjIsMjMwLDEyMnogTTE4Ny44NywyODkuOTljLTE1LjYyLDE1LjYyLTQwLjk1LDE1LjYyLTU2LjU3LDBjLTE1LjYyLTE1LjYyLTE1LjYyLTQwLjk1LDAtNTYuNTcKCQkJYzE1LjYyLTE1LjYyLDQwLjk1LTE1LjYyLDU2LjU3LDBDMjAzLjQ5LDI0OS4wNCwyMDMuNDksMjc0LjM3LDE4Ny44NywyODkuOTl6Ii8+CgkJCgkJCTxsaW5lYXJHcmFkaWVudCBpZD0iU1ZHSURfMDAwMDAxNTIyNTE1MTg2NTE3MDk5MjcwMzAwMDAwMTI4NzY4Mzk1NjY1NTE0ODA0ODJfIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjI2NC40NzMxIiB5MT0iMjI0LjM4OTgiIHgyPSIzNzcuNjEwMiIgeTI9IjMzNy41MjY5Ij4KCQkJPHN0b3AgIG9mZnNldD0iMCIgc3R5bGU9InN0b3AtY29sb3I6IzAwQjBGRiIvPgoJCQk8c3RvcCAgb2Zmc2V0PSIxIiBzdHlsZT0ic3RvcC1jb2xvcjojMjk3OUZGIi8+CgkJPC9saW5lYXJHcmFkaWVudD4KCQk8cGF0aCBzdHlsZT0iZmlsbDp1cmwoI1NWR0lEXzAwMDAwMTUyMjUxNTE4NjUxNzA5OTI3MDMwMDAwMDEyODc2ODM5NTY2NTUxNDgwNDgyXyk7IiBkPSJNMzk2LjU3LDIwNS40MwoJCQljLTMxLjI0LTMxLjI0LTgxLjktMzEuMjQtMTEzLjE0LDBjLTE0LjYsMTQuNi0yMi4zOCwzMy40NS0yMy4zMyw1Mi41N0gyNjB2MTA4YzAsNi42Myw1LjM3LDEyLDEyLDEyaDE2YzYuNjMsMCwxMi01LjM3LDEyLTEyCgkJCXYtMzQuNzFjMzAuNiwxNy42OSw3MC4zOSwxMy40Niw5Ni41Ny0xMi43MkM0MjcuODEsMjg3LjMzLDQyNy44MSwyMzYuNjcsMzk2LjU3LDIwNS40M3ogTTM2OC43LDI5MC41OAoJCQljLTE1LjYyLDE1LjYyLTQwLjk1LDE1LjYyLTU2LjU3LDBzLTE1LjYyLTQwLjk1LDAtNTYuNTdzNDAuOTUtMTUuNjIsNTYuNTcsMFMzODQuMzIsMjc0Ljk2LDM2OC43LDI5MC41OHoiLz4KCTwvZz4KCTxnPgoJCTxkZWZzPgoJCQk8cGF0aCBpZD0iU1ZHSURfMDAwMDAxMTQwNjMxMjQ2Mjc5MTc3Mjk3NzAwMDAwMTc4ODYyOTkwODA4NjY3NjQxODBfIiBkPSJNMjMwLDEyMmgtMjBjLTUuNTIsMC0xMCw0LjQ4LTEwLDEwdjYwLjcxCgkJCQljLTMwLjYtMTcuNjktNzAuMzktMTMuNDYtOTYuNTcsMTIuNzJjLTMxLjI0LDMxLjI0LTMxLjI0LDgxLjksMCwxMTMuMTRjMzEuMjQsMzEuMjQsODEuOSwzMS4yNCwxMTMuMTQsMAoJCQkJQzIzMi4xOSwzMDIuOTUsMjQwLDI4Mi40NywyNDAsMjYyVjEzMkMyNDAsMTI2LjQ4LDIzNS41MiwxMjIsMjMwLDEyMnogTTE4Ny44NywyODkuOTljLTE1LjYyLDE1LjYyLTQwLjk1LDE1LjYyLTU2LjU3LDAKCQkJCWMtMTUuNjItMTUuNjItMTUuNjItNDAuOTUsMC01Ni41N2MxNS42Mi0xNS42Miw0MC45NS0xNS42Miw1Ni41NywwQzIwMy40OSwyNDkuMDQsMjAzLjQ5LDI3NC4zNywxODcuODcsMjg5Ljk5eiIvPgoJCTwvZGVmcz4KCQk8Y2xpcFBhdGggaWQ9IlNWR0lEXzAwMDAwMDM3Njg4MjU3Nzk0MDU3NTY3MzcwMDAwMDA0MTg3NjQ3Njg5MDAxODAyOTQzXyI+CgkJCTx1c2UgeGxpbms6aHJlZj0iI1NWR0lEXzAwMDAwMTE0MDYzMTI0NjI3OTE3NzI5NzcwMDAwMDE3ODg2Mjk5MDgwODY2NzY0MTgwXyIgIHN0eWxlPSJvdmVyZmxvdzp2aXNpYmxlOyIvPgoJCTwvY2xpcFBhdGg+CgkJPHBhdGggc3R5bGU9Im9wYWNpdHk6MC4yO2NsaXAtcGF0aDp1cmwoI1NWR0lEXzAwMDAwMDM3Njg4MjU3Nzk0MDU3NTY3MzcwMDAwMDA0MTg3NjQ3Njg5MDAxODAyOTQzXyk7ZmlsbDojRkZGRkZGOyIgZD0iTTQ3LDM4NgoJCQljMTIuNS0xNi45OSw5Ljc1LTU5Ljc4LDE4LTgyYzEzLTM1LDQ2LTY3LDk1LTY3YzcxLDAsODQuNzYsNjIuMTIsMTI0LDc0Yzc2LDIzLDExMS4zMi00OC40OSwxNDctMzRsMjEsMTE4TDQ3LDM4NnoiLz4KCTwvZz4KCTxnPgoJCTxkZWZzPgoJCQk8cGF0aCBpZD0iU1ZHSURfMDAwMDAwODA5MDU5NjI0NDE1NzMzNTQxODAwMDAwMDM4NzkzMTE5MTk2MjM4MjQwMDFfIiBkPSJNMzk2LjU3LDIwNS40M2MtMzEuMjQtMzEuMjQtODEuOS0zMS4yNC0xMTMuMTQsMAoJCQkJYy0xNC42LDE0LjYtMjIuMzgsMzMuNDUtMjMuMzMsNTIuNTdIMjYwdjEwOGMwLDYuNjMsNS4zNywxMiwxMiwxMmgxNmM2LjYzLDAsMTItNS4zNywxMi0xMnYtMzQuNzEKCQkJCWMzMC42LDE3LjY5LDcwLjM5LDEzLjQ2LDk2LjU3LTEyLjcyQzQyNy44MSwyODcuMzMsNDI3LjgxLDIzNi42NywzOTYuNTcsMjA1LjQzeiBNMzY4LjcsMjkwLjU4CgkJCQljLTE1LjYyLDE1LjYyLTQwLjk1LDE1LjYyLTU2LjU3LDBzLTE1LjYyLTQwLjk1LDAtNTYuNTdzNDAuOTUtMTUuNjIsNTYuNTcsMFMzODQuMzIsMjc0Ljk2LDM2OC43LDI5MC41OHoiLz4KCQk8L2RlZnM+CgkJPGNsaXBQYXRoIGlkPSJTVkdJRF8wMDAwMDA2MjE1OTQ2ODUxMjU2MDg4MTMzMDAwMDAwMzgzMDY4NTMxNjkzNzI1NzY1NV8iPgoJCQk8dXNlIHhsaW5rOmhyZWY9IiNTVkdJRF8wMDAwMDA4MDkwNTk2MjQ0MTU3MzM1NDE4MDAwMDAwMzg3OTMxMTkxOTYyMzgyNDAwMV8iICBzdHlsZT0ib3ZlcmZsb3c6dmlzaWJsZTsiLz4KCQk8L2NsaXBQYXRoPgoJCTxwYXRoIHN0eWxlPSJvcGFjaXR5OjAuMjtjbGlwLXBhdGg6dXJsKCNTVkdJRF8wMDAwMDA2MjE1OTQ2ODUxMjU2MDg4MTMzMDAwMDAwMzgzMDY4NTMxNjkzNzI1NzY1NV8pO2ZpbGw6I0ZGRkZGRjsiIGQ9Ik00NywzODYKCQkJYzEyLjUtMTYuOTksOS43NS01OS43OCwxOC04MmMxMy0zNSw0Ni02Nyw5NS02N2M3MSwwLDg0Ljc2LDYyLjEyLDEyNCw3NGM3NiwyMywxMTEuMzItNDguNDksMTQ3LTM0bDIxLDExOEw0NywzODZ6Ii8+Cgk8L2c+CjwvZz4KPC9zdmc+Cg==" alt="" class="image">
+  <div class="text">
+    You were redirected to app 🔥
+  </div>
+  <div class="hint">
+    Congratulations! You have successfully logged in to Droply
+  </div>
+  <div class="copyright">
+    © 2022, Beydex Team
+  </div>
+</div>
+<h1 id="message" style="display: none">Redirected to app</h1>
+<script type="text/javascript">
+  const GOOGLE_NONCE_SIZE = 16;
+  const GOOGLE_CLIENT_ID = "560884241902-p1atlsdr1i1sc79icipgbled726ek470.apps.googleusercontent.com";
+
+  const CLIENT_PROTOCOL = "droply"
+
+  window.addEventListener("load", () => {
+    let token = getIdToken()
+
+    if (token === "") {
+      openGoogleAuth()
+    } else {
+      openClient(token)
+      showSuccess()
+    }
+  })
+
+  function getIdToken() {
+    let params = window.location.hash.slice(1).split("&");
+
+    for (let param of params) {
+      let [name, content] = param.split("=");
+
+      if (name === "id_token") {
+        return content;
+      }
+    }
+
+    return "";
+  }
+
+  function openClient(token) {
+    window.location.href = `${CLIENT_PROTOCOL}:///google/${token}`;
+  }
+
+  function openGoogleAuth() {
+    let url = new URL("https://accounts.google.com/o/oauth2/v2/auth")
+
+    url.searchParams.append("prompt", "consent")
+    url.searchParams.append("scope", "profile email")
+    url.searchParams.append("response_type", "id_token")
+    url.searchParams.append("client_id", GOOGLE_CLIENT_ID)
+    url.searchParams.append("nonce", randomHexString(GOOGLE_NONCE_SIZE))
+    url.searchParams.append("redirect_uri", "https://auth.droply.ru/google")
+
+    console.log("REDIRECTING TO", url.toString())
+    window.location.href = url.toString()
+  }
+
+  function showSuccess() {
+    document.getElementById("success").style.display = "flex"
+  }
+
+  function randomHexString(size) {
+    let result = [];
+    let hexRef = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
+
+    for (let n = 0; n < size; n++) {
+      result.push(hexRef[Math.floor(Math.random() * 16)]);
+    }
+
+    return result.join('');
+  }
+
+</script>
+</body>
+</html>
