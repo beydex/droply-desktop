@@ -39,7 +39,7 @@ function makeNotification(request: RepoRequest, change: RequestChange) {
             }
             break;
         case RequestChange.DELETED:
-            if (request.outgoing) {
+            if (!request.outgoing) {
                 if (request.state = RequestState.ACTIVE) {
                     notification = new Notification(`${request.user.name} cancelled your transfer`);
                 } else {
