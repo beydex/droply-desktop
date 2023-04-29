@@ -1,6 +1,7 @@
 import {EventEmitter} from "events";
 
 import * as constants from "renderer/constants"
+import {v4 as uuidv4} from 'uuid';
 
 export interface DroplyRequest<T> {
     path: string,
@@ -67,16 +68,18 @@ export default class WebsocketHelper extends EventEmitter {
 
     public async request<T, U extends DroplyResponse>(request: DroplyRequest<T>): Promise<U> {
         return new Promise<U>(resolve => {
+            let finalRequest = request as any;
+            finalRequest.nonce = uuidv4();
+
             this.requests.push({
                 state: RequestState.PENDING,
                 timeout: setTimeout(this.handleTimeout.bind(this), constants.WEBSOCKET_REQUEST_TIMEOUT),
 
-                request: request,
+                request: finalRequest,
                 callback: resolve
             })
 
-            console.log("[SOCKET]: Request", JSON.stringify(request, null, 2))
-
+            console.log("[SOCKET]: Request", JSON.stringify(finalRequest, null, 2))
             this.emit(WebsocketHelperEvent.REQUEST)
         })
     }
@@ -122,6 +125,7 @@ export default class WebsocketHelper extends EventEmitter {
     }
 
     private createWebsocket(): WebSocket {
+        console.log('[USING] WebSocket Endpoint: ' + constants.WEBSOCKET_SERVER_ADDR)
         let websocket = new WebSocket(
             constants.WEBSOCKET_SERVER_ADDR
         )
